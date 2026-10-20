@@ -61,11 +61,12 @@ import com.kidsee.core.ui.theme.WazeRedLight
 import com.kidsee.core.ui.theme.WazeTextPrimary
 import com.kidsee.core.ui.theme.WazeTextSecondary
 import com.kidsee.core.ui.theme.WazeWarmWhite
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 @Composable
 fun ParentDashboardScreen(
-    devicesFlow: StateFlow<List<ChildDevice>>,
+    devicesFlow: Flow<List<ChildDevice>>,
     onDeviceClick: (ChildDevice) -> Unit,
     onDevicePipClick: (ChildDevice) -> Unit,
     onLockToggle: (ChildDevice) -> Unit,

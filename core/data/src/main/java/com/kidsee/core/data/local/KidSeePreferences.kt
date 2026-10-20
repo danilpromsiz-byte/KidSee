@@ -37,7 +37,10 @@ class KidSeePreferences(private val context: Context) {
     }
 
     val deviceIdFlow: Flow<String> = context.dataStore.data.map { prefs ->
-        prefs[KEY_DEVICE_ID] ?: UUID.randomUUID().toString()
+        prefs[KEY_DEVICE_ID] ?: android.provider.Settings.Secure.getString(
+            context.contentResolver,
+            android.provider.Settings.Secure.ANDROID_ID
+        ) ?: ("dev_" + android.os.Build.MODEL.hashCode().toString())
     }
 
     val isSetupCompleteFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->

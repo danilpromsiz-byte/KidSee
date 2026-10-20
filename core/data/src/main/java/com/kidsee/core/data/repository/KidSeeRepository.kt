@@ -7,14 +7,20 @@ import com.kidsee.core.domain.model.ScheduleRule
 import com.kidsee.core.domain.model.UserRole
 import com.kidsee.core.domain.model.VoiceMessage
 import com.kidsee.core.network.FirebaseClient
+import com.kidsee.core.network.lan.LanDiscoveryManager
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.merge
 
 class KidSeeRepository(
     private val preferences: KidSeePreferences,
-    private val firebaseClient: FirebaseClient
+    private val firebaseClient: FirebaseClient = FirebaseClient(),
+    val lanDiscoveryManager: LanDiscoveryManager? = null
 ) {
-    constructor(preferences: KidSeePreferences) : this(preferences, FirebaseClient())
+    constructor(preferences: KidSeePreferences) : this(preferences, FirebaseClient(), null)
+    constructor(preferences: KidSeePreferences, lanDiscoveryManager: LanDiscoveryManager) : this(preferences, FirebaseClient(), lanDiscoveryManager)
 
     val userRoleFlow = preferences.roleFlow
     val familyIdFlow = preferences.familyIdFlow
@@ -37,28 +43,52 @@ class KidSeeRepository(
         preferences.setSetupComplete(true)
     }
 
-    // --- Devices ---
+    // --- Devices (Merges local LAN discovery + Firebase) ---
 
     suspend fun updateDeviceStatus(device: ChildDevice) {
         firebaseClient.updateDeviceStatus(device)
+        lanDiscoveryManager?.broadcastDevice(device)
     }
 
     fun observeFamilyDevices(familyId: String): Flow<List<ChildDevice>> {
-        return firebaseClient.observeFamilyDevices(familyId)
+        val lanFlow = lanDiscoveryManager?.discoveredDevicesFlow ?: flowOf(emptyList())
+        val fbFlow = firebaseClient.observeFamilyDevices(familyId)
+
+        return combine(lanFlow, fbFlow) { lanList, fbList ->
+            val map = LinkedHashMap<String, ChildDevice>()
+            // Remote Firebase devices
+            for (d in fbList) {
+                map[d.id] = d
+            }
+            // Real-time LAN devices take precedence and update immediately
+            for (d in lanList) {
+                map[d.id] = d
+            }
+            map.values.toList()
+        }
     }
 
     fun observeSingleDevice(familyId: String, deviceId: String): Flow<ChildDevice?> {
-        return firebaseClient.observeSingleDevice(familyId, deviceId)
+        val lanFlow = lanDiscoveryManager?.discoveredDevicesFlow ?: flowOf(emptyList())
+        val fbFlow = firebaseClient.observeSingleDevice(familyId, deviceId)
+
+        return combine(lanFlow, fbFlow) { lanList, fbDevice ->
+            val lanDevice = lanList.find { it.id == deviceId }
+            lanDevice ?: fbDevice
+        }
     }
 
     // --- Commands ---
 
     suspend fun sendCommand(command: DeviceCommand) {
         firebaseClient.sendCommand(command)
+        lanDiscoveryManager?.sendCommand(command)
     }
 
     fun observeIncomingCommands(deviceId: String): Flow<DeviceCommand> {
-        return firebaseClient.observeIncomingCommands(deviceId)
+        val lanFlow = lanDiscoveryManager?.incomingCommandsFlow ?: emptyFlow()
+        val fbFlow = firebaseClient.observeIncomingCommands(deviceId)
+        return merge(lanFlow, fbFlow)
     }
 
     // --- Voice Messages ---

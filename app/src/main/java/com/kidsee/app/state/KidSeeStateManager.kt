@@ -17,6 +17,8 @@ import com.kidsee.core.domain.model.DeviceCommand
 import com.kidsee.core.domain.model.DeviceStatus
 import com.kidsee.core.domain.model.DeviceType
 import com.kidsee.core.domain.model.UserRole
+import com.kidsee.core.network.FirebaseClient
+import com.kidsee.core.network.lan.LanDiscoveryManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -34,7 +36,12 @@ import java.util.Calendar
 
 class KidSeeStateManager(
     private val context: Context,
-    val repository: KidSeeRepository = KidSeeRepository(KidSeePreferences(context))
+    val lanDiscoveryManager: LanDiscoveryManager = LanDiscoveryManager(context),
+    val repository: KidSeeRepository = KidSeeRepository(
+        KidSeePreferences(context),
+        FirebaseClient(),
+        lanDiscoveryManager
+    )
 ) {
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -64,6 +71,9 @@ class KidSeeStateManager(
 
     fun startChildServices() {
         stopChildServices()
+
+        // 0. Start LAN broadcasting of child state
+        lanDiscoveryManager.startBroadcasting { _currentDeviceState.value }
 
         // 1. Start Heartbeat Loop
         heartbeatJob = scope.launch {
@@ -131,6 +141,7 @@ class KidSeeStateManager(
         commandJob?.cancel()
         voiceJob?.cancel()
         scheduleJob?.cancel()
+        lanDiscoveryManager.stop()
     }
 
     suspend fun onChildActivityChanged(packageName: String, appLabel: String, isVideo: Boolean) {

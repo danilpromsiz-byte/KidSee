@@ -124,33 +124,14 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+        LaunchedEffect(roleState) {
+            if (roleState == UserRole.PARENT) {
+                app.stateManager.lanDiscoveryManager.startListening()
+            }
+        }
+
         val familyDevicesFlow = remember {
-            MutableStateFlow<List<ChildDevice>>(
-                listOf(
-                    ChildDevice(
-                        id = "child_phone_1",
-                        name = "Alex's Tablet",
-                        deviceType = com.kidsee.core.domain.model.DeviceType.TABLET,
-                        status = com.kidsee.core.domain.model.DeviceStatus.ONLINE,
-                        currentAppLabel = "YouTube Kids",
-                        isVideoPlaying = true,
-                        currentVolume = 70,
-                        batteryPercent = 84,
-                        lastSeenTimestamp = System.currentTimeMillis()
-                    ),
-                    ChildDevice(
-                        id = "child_tv_1",
-                        name = "Kids Room TV",
-                        deviceType = com.kidsee.core.domain.model.DeviceType.TV,
-                        status = com.kidsee.core.domain.model.DeviceStatus.ONLINE,
-                        currentAppLabel = "Netflix",
-                        isVideoPlaying = true,
-                        currentVolume = 45,
-                        batteryPercent = 100,
-                        lastSeenTimestamp = System.currentTimeMillis()
-                    )
-                )
-            )
+            repository.observeFamilyDevices("default_family")
         }
 
         val isTv = isAndroidTv()

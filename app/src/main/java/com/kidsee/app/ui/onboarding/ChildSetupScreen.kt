@@ -4,10 +4,8 @@ import android.app.admin.DevicePolicyManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,8 +13,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,8 +27,6 @@ import androidx.compose.material.icons.filled.AdminPanelSettings
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.NotificationsActive
-import androidx.compose.material.icons.filled.QueryStats
-import androidx.compose.material.icons.filled.ScreenShare
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -63,108 +61,114 @@ fun ChildSetupScreen(
         modifier = Modifier
             .fillMaxSize()
             .background(WazeWarmWhite)
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .statusBarsPadding()
+            .navigationBarsPadding()
+            .padding(horizontal = 24.dp)
     ) {
-        Text(
-            text = stringResource(R.string.setup_title),
-            style = KidSeeTypography.headlineLarge.copy(color = WazeBlue)
-        )
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.setup_title),
+                style = KidSeeTypography.headlineLarge.copy(color = WazeBlue)
+            )
 
-        Text(
-            text = stringResource(R.string.setup_subtitle),
-            style = KidSeeTypography.bodyMedium
-        )
+            Spacer(modifier = Modifier.height(8.dp))
 
-        Spacer(modifier = Modifier.height(24.dp))
+            Text(
+                text = stringResource(R.string.setup_subtitle),
+                style = KidSeeTypography.bodyMedium
+            )
 
-        // 1. Accessibility Service
-        PermissionStepCard(
-            title = stringResource(R.string.perm_accessibility),
-            description = stringResource(R.string.perm_accessibility_desc),
-            icon = Icons.Default.Accessibility,
-            isGranted = false,
-            onAction = {
-                context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
-            }
-        )
+            Spacer(modifier = Modifier.height(20.dp))
 
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 2. Notification Listener
-        PermissionStepCard(
-            title = stringResource(R.string.perm_notification),
-            description = stringResource(R.string.perm_notification_desc),
-            icon = Icons.Default.NotificationsActive,
-            isGranted = false,
-            onAction = {
-                context.startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
-            }
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 3. Overlay (Display over other apps)
-        PermissionStepCard(
-            title = stringResource(R.string.perm_overlay),
-            description = stringResource(R.string.perm_overlay_desc),
-            icon = Icons.Default.Layers,
-            isGranted = isOverlayGranted,
-            onAction = {
-                val intent = Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:${context.packageName}")
-                )
-                context.startActivity(intent)
-            }
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // 4. Device Admin
-        PermissionStepCard(
-            title = stringResource(R.string.perm_device_admin),
-            description = stringResource(R.string.perm_device_admin_desc),
-            icon = Icons.Default.AdminPanelSettings,
-            isGranted = isAdminGranted,
-            onAction = {
-                val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
-                    putExtra(
-                        DevicePolicyManager.EXTRA_DEVICE_ADMIN,
-                        KidSeeDeviceAdmin.getComponentName(context)
-                    )
-                    putExtra(
-                        DevicePolicyManager.EXTRA_ADD_EXPLANATION,
-                        "KidSee needs Device Admin to lock screen on parent demand or schedule"
-                    )
+            // 1. Accessibility Service
+            PermissionStepCard(
+                title = stringResource(R.string.perm_accessibility),
+                description = stringResource(R.string.perm_accessibility_desc),
+                icon = Icons.Default.Accessibility,
+                isGranted = false,
+                onAction = {
+                    context.startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
                 }
-                context.startActivity(intent)
-            }
-        )
+            )
 
-        Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-        // 5. Usage Access
-        PermissionStepCard(
-            title = stringResource(R.string.perm_usage),
-            description = stringResource(R.string.perm_usage_desc),
-            icon = Icons.Default.QueryStats,
-            isGranted = false,
-            onAction = {
-                context.startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-            }
-        )
+            // 2. Notification Listener
+            PermissionStepCard(
+                title = stringResource(R.string.perm_notification),
+                description = stringResource(R.string.perm_notification_desc),
+                icon = Icons.Default.NotificationsActive,
+                isGranted = false,
+                onAction = {
+                    context.startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
+                }
+            )
 
-        Spacer(modifier = Modifier.height(30.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-        KidSeePillButton(
-            text = stringResource(R.string.btn_finish_setup),
-            onClick = onSetupComplete,
-            modifier = Modifier.fillMaxWidth()
-        )
+            // 3. Overlay (Display over other apps)
+            PermissionStepCard(
+                title = stringResource(R.string.perm_overlay),
+                description = stringResource(R.string.perm_overlay_desc),
+                icon = Icons.Default.Layers,
+                isGranted = isOverlayGranted,
+                onAction = {
+                    val intent = Intent(
+                        Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                        Uri.parse("package:${context.packageName}")
+                    )
+                    context.startActivity(intent)
+                }
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 4. Device Admin
+            PermissionStepCard(
+                title = stringResource(R.string.perm_device_admin),
+                description = stringResource(R.string.perm_device_admin_desc),
+                icon = Icons.Default.AdminPanelSettings,
+                isGranted = isAdminGranted,
+                onAction = {
+                    val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+                        putExtra(
+                            DevicePolicyManager.EXTRA_DEVICE_ADMIN,
+                            KidSeeDeviceAdmin.getComponentName(context)
+                        )
+                        putExtra(
+                            DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                            "KidSee needs Device Admin to lock screen on parent demand or schedule"
+                        )
+                    }
+                    context.startActivity(intent)
+                }
+            )
+
+            Spacer(modifier = Modifier.height(20.dp))
+        }
+
+        // Elevated Bottom Action Area with comfortable padding above system navigation
+        Surface(
+            color = WazeWarmWhite,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+        ) {
+            KidSeePillButton(
+                text = stringResource(R.string.btn_finish_setup),
+                onClick = onSetupComplete,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(54.dp)
+            )
+        }
     }
 }
 

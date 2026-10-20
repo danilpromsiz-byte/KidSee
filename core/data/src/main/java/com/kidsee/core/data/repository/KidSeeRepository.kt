@@ -27,9 +27,14 @@ class KidSeeRepository(
     val deviceIdFlow = preferences.deviceIdFlow
     val isSetupCompleteFlow = preferences.isSetupCompleteFlow
     val parentPinFlow = preferences.parentPinFlow
+    val languageFlow = preferences.languageFlow
 
     suspend fun saveRole(role: UserRole) {
         preferences.setUserRole(role)
+    }
+
+    suspend fun saveLanguage(langCode: String) {
+        preferences.setLanguage(langCode)
     }
 
     suspend fun saveParentPin(pin: String) {

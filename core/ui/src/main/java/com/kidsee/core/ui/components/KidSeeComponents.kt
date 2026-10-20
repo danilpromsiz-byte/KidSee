@@ -90,7 +90,7 @@ fun KidSeePillButton(
             .height(height)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 24.dp),
+            modifier = Modifier.padding(horizontal = 32.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -102,8 +102,11 @@ fun KidSeePillButton(
                 text = text,
                 style = KidSeeTypography.titleMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = contentColor
-                )
+                    color = contentColor,
+                    fontSize = 15.sp
+                ),
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                maxLines = 1
             )
         }
     }

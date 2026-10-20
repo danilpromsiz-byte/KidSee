@@ -176,22 +176,21 @@ fun ParentDashboardScreen(
                             }
                         }
                     }
-                    item { Spacer(modifier = Modifier.height(80.dp)) }
+                    item {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        KidSeePillButton(
+                            text = "+ Подключить еще устройство",
+                            onClick = onAddDeviceClick,
+                            backgroundColor = Color.White,
+                            contentColor = WazeBlue,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 8.dp)
+                        )
+                        Spacer(modifier = Modifier.height(40.dp))
+                    }
                 }
             }
-        }
-
-        // Add Device Floating Action Button
-        FloatingActionButton(
-            onClick = onAddDeviceClick,
-            shape = RoundedCornerShape(percent = 50),
-            containerColor = WazeBlue,
-            contentColor = Color.White,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(24.dp)
-        ) {
-            Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
         }
     }
 }
@@ -363,7 +362,10 @@ private fun EmptyDevicesView(onAddDeviceClick: () -> Unit) {
         Spacer(modifier = Modifier.height(24.dp))
         KidSeePillButton(
             text = stringResource(R.string.btn_add_device),
-            onClick = onAddDeviceClick
+            onClick = onAddDeviceClick,
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .padding(horizontal = 4.dp)
         )
     }
 }

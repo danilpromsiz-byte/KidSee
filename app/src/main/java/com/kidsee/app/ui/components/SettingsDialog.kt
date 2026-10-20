@@ -62,13 +62,15 @@ import kotlinx.coroutines.launch
 fun SettingsDialog(
     currentVersion: String,
     updateState: UpdateState,
+    currentLanguage: String = "ru",
     onCheckUpdate: () -> Unit,
     onChangePin: () -> Unit,
     onSwitchRole: () -> Unit,
+    onLanguageChanged: (String) -> Unit = {},
     onDismiss: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
-    var selectedLang by remember { mutableStateOf("ru") }
+    var selectedLang by remember { mutableStateOf(currentLanguage) }
 
     val languages = listOf(
         "ru" to "Русский",
@@ -211,8 +213,7 @@ fun SettingsDialog(
                                 .weight(1f)
                                 .clickable {
                                     selectedLang = code
-                                    val locales = LocaleListCompat.forLanguageTags(code)
-                                    AppCompatDelegate.setApplicationLocales(locales)
+                                    onLanguageChanged(code)
                                 }
                         ) {
                             Text(

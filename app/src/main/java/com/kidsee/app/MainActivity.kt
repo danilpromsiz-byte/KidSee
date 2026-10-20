@@ -15,8 +15,8 @@ import android.os.Bundle
 import android.util.Rational
 import android.view.KeyEvent
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,6 +29,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.os.LocaleListCompat
 import com.kidsee.app.ui.child.ChildActiveScreen
+import com.kidsee.app.ui.components.AddDeviceDialog
 import com.kidsee.app.ui.components.PinCodeDialog
 import com.kidsee.app.ui.components.SettingsDialog
 import com.kidsee.app.ui.components.UpdateDialog
@@ -44,16 +45,21 @@ import com.kidsee.core.domain.model.CommandType
 import com.kidsee.core.domain.model.DeviceCommand
 import com.kidsee.core.domain.model.UserRole
 import com.kidsee.core.ui.theme.KidSeeTheme
+import com.kidsee.core.ui.util.LocaleHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     companion object {
         const val ACTION_PIP_PLAY_PAUSE = "com.kidsee.app.PIP_PLAY_PAUSE"
         const val ACTION_PIP_LOCK = "com.kidsee.app.PIP_LOCK"
+    }
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.wrapContext(newBase))
     }
 
     private var isInPipMode by mutableStateOf(false)
@@ -110,17 +116,26 @@ class MainActivity : ComponentActivity() {
         val roleState by repository.userRoleFlow.collectAsState(initial = null)
         val isSetupComplete by repository.isSetupCompleteFlow.collectAsState(initial = false)
         val parentPin by repository.parentPinFlow.collectAsState(initial = "1234")
+        val currentLanguage by repository.languageFlow.collectAsState(initial = LocaleHelper.getPersistedLanguage(this@MainActivity))
         val childState by app.stateManager.currentDeviceState.collectAsState()
         val updateState by appUpdateManager.updateState.collectAsState()
 
         var isParentUnlocked by rememberSaveable { mutableStateOf(false) }
         var showUpdateDialog by remember { mutableStateOf(false) }
         var showSettingsDialog by remember { mutableStateOf(false) }
+        var showAddDeviceDialog by remember { mutableStateOf(false) }
         var showPinDialog by remember { mutableStateOf(false) }
         var pinPromptTitle by remember { mutableStateOf("Введите PIN-код родителя") }
         var pinPromptDescription by remember { mutableStateOf("Защита настроек от детей") }
         var pinExpectedValue by remember { mutableStateOf<String?>(null) }
         var pinSuccessCallback by remember { mutableStateOf<((String) -> Unit)?>(null) }
+
+        fun changeLanguage(langCode: String) {
+            scope.launch {
+                repository.saveLanguage(langCode)
+                LocaleHelper.applyLanguage(this@MainActivity, langCode, recreateActivity = true)
+            }
+        }
 
         LaunchedEffect(Unit) {
             appUpdateManager.checkForUpdates(isManual = false)
@@ -138,11 +153,20 @@ class MainActivity : ComponentActivity() {
             )
         }
 
+        // Add Device Dialog
+        if (showAddDeviceDialog) {
+            AddDeviceDialog(
+                familyId = "KID-FAMILY-1",
+                onDismiss = { showAddDeviceDialog = false }
+            )
+        }
+
         // Settings Dialog
         if (showSettingsDialog) {
             SettingsDialog(
                 currentVersion = appUpdateManager.getCurrentVersionName(),
                 updateState = updateState,
+                currentLanguage = currentLanguage,
                 onCheckUpdate = {
                     scope.launch {
                         appUpdateManager.checkForUpdates(isManual = true)
@@ -179,6 +203,9 @@ class MainActivity : ComponentActivity() {
                             app.stateManager.stopChildServices()
                         }
                     }
+                },
+                onLanguageChanged = { langCode ->
+                    changeLanguage(langCode)
                 },
                 onDismiss = { showSettingsDialog = false }
             )
@@ -218,6 +245,10 @@ class MainActivity : ComponentActivity() {
 
         if (roleState == null) {
             OnboardingScreen(
+                currentLanguage = currentLanguage,
+                onLanguageChanged = { langCode ->
+                    changeLanguage(langCode)
+                },
                 onRoleSelected = { role ->
                     scope.launch {
                         repository.saveRole(role)
@@ -226,9 +257,12 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 },
-                onLanguageChanged = { langCode ->
-                    val appLocale = LocaleListCompat.forLanguageTags(langCode)
-                    AppCompatDelegate.setApplicationLocales(appLocale)
+                onParentRegistered = { pin ->
+                    scope.launch {
+                        repository.saveParentPin(pin)
+                        repository.saveRole(UserRole.PARENT)
+                        isParentUnlocked = true
+                    }
                 }
             )
         } else if (roleState == UserRole.CHILD) {
@@ -299,7 +333,7 @@ class MainActivity : ComponentActivity() {
                             sendCommand(device.id, cmdType)
                         },
                         onAddDeviceClick = {
-                            Timber.d("Add device clicked")
+                            showAddDeviceDialog = true
                         },
                         onCheckUpdateClick = {
                             scope.launch {

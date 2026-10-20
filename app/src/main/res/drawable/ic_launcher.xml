@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- White circular background for legacy devices -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M 54,4 A 50,50 0 1 0 54,104 A 50,50 0 1 0 54,4 Z" />
+
+    <group>
+        <!-- Wheels -->
+        <path
+            android:fillColor="#22262A"
+            android:pathData="M 37,73 A 7,7 0 1 0 37,87 A 7,7 0 1 0 37,73 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M 37,76.5 A 3.5,3.5 0 1 0 37,83.5 A 3.5,3.5 0 1 0 37,76.5 Z" />
+
+        <path
+            android:fillColor="#22262A"
+            android:pathData="M 71,73 A 7,7 0 1 0 71,87 A 7,7 0 1 0 71,73 Z" />
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M 71,76.5 A 3.5,3.5 0 1 0 71,83.5 A 3.5,3.5 0 1 0 71,76.5 Z" />
+
+        <!-- Body -->
+        <path
+            android:fillColor="#3399FF"
+            android:pathData="M 45,22 L 63,22 A 22,22 0 0 1 85,44 L 85,54 A 22,22 0 0 1 63,76 L 45,76 A 22,22 0 0 1 23,54 L 23,44 A 22,22 0 0 1 45,22 Z" />
+
+        <!-- Eye Visor -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M 45,28 L 63,28 A 14,14 0 0 1 77,42 L 77,44 A 14,14 0 0 1 63,58 L 45,58 A 14,14 0 0 1 31,44 L 31,42 A 14,14 0 0 1 45,28 Z" />
+
+        <!-- Pupil -->
+        <path
+            android:fillColor="#16191D"
+            android:pathData="M 54,36 A 9,9 0 1 0 54,54 A 9,9 0 1 0 54,36 Z" />
+
+        <!-- Highlight -->
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M 51.5,39 A 3,3 0 1 0 51.5,45 A 3,3 0 1 0 51.5,39 Z" />
+
+        <!-- Smile -->
+        <path
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="3.2"
+            android:strokeLineCap="round"
+            android:pathData="M 46,67 Q 54,73 62,67" />
+    </group>
+</vector>

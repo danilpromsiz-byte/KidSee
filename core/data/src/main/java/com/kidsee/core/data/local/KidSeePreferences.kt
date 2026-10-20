@@ -51,6 +51,10 @@ class KidSeePreferences(private val context: Context) {
         prefs[KEY_PARENT_PIN] ?: "1234"
     }
 
+    val languageFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_LANGUAGE] ?: "ru"
+    }
+
     suspend fun setUserRole(role: UserRole) {
         context.dataStore.edit { it[KEY_ROLE] = role.name }
     }

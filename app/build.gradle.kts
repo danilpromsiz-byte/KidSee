@@ -119,3 +119,16 @@ dependencies {
     androidTestImplementation(libs.compose.ui.test.junit4)
     debugImplementation(libs.bundles.compose.debug)
 }
+
+tasks.matching { it.name == "assembleDebug" }.configureEach {
+    doLast {
+        val src = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
+        if (src.exists()) {
+            val destKidSee = File(rootDir, "KidSee.apk")
+            val destApp = File(rootDir, "app-debug.apk")
+            src.copyTo(destKidSee, overwrite = true)
+            src.copyTo(destApp, overwrite = true)
+            logger.lifecycle("Successfully copied finished APK to: \${destKidSee.absolutePath}")
+        }
+    }
+}

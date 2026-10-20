@@ -14,8 +14,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,20 +38,36 @@ import com.kidsee.core.ui.theme.KidSeeTypography
 import com.kidsee.core.ui.theme.WazeBlue
 import com.kidsee.core.ui.theme.WazeGreen
 import com.kidsee.core.ui.theme.WazeGreenLight
+import com.kidsee.core.ui.theme.WazeTextSecondary
 import com.kidsee.core.ui.theme.WazeWarmWhite
 
 @Composable
 fun ChildActiveScreen(
-    device: ChildDevice?
+    device: ChildDevice?,
+    onSettingsClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(WazeWarmWhite)
             .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+        ) {
+            IconButton(onClick = onSettingsClick) {
+                Icon(
+                    imageVector = Icons.Default.Settings,
+                    contentDescription = "Parent Settings",
+                    tint = WazeTextSecondary
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.weight(0.5f))
+
         KidSeeMascot(size = 120.dp, isHappy = true)
 
         Spacer(modifier = Modifier.height(24.dp))
@@ -104,6 +122,8 @@ fun ChildActiveScreen(
                 ProtectionItem(title = "Direct Parent Voice Notes")
             }
         }
+
+        Spacer(modifier = Modifier.weight(1f))
     }
 }
 

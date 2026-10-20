@@ -47,6 +47,10 @@ class KidSeePreferences(private val context: Context) {
         prefs[KEY_IS_SETUP_COMPLETE] ?: false
     }
 
+    val parentPinFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_PARENT_PIN] ?: "1234"
+    }
+
     suspend fun setUserRole(role: UserRole) {
         context.dataStore.edit { it[KEY_ROLE] = role.name }
     }

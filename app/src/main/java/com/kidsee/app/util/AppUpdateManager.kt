@@ -5,12 +5,15 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.kidsee.core.network.updater.GitHubUpdateClient
 import com.kidsee.core.network.updater.ReleaseInfo
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.io.File
 
@@ -40,8 +43,13 @@ class AppUpdateManager(
         }
     }
 
-    suspend fun checkForUpdates() {
+    suspend fun checkForUpdates(isManual: Boolean = false) {
         _updateState.value = UpdateState.Checking
+        if (isManual) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(context, "Проверка обновлений на GitHub...", Toast.LENGTH_SHORT).show()
+            }
+        }
         try {
             val release = updateClient.checkLatestRelease()
             if (release != null) {
@@ -53,9 +61,23 @@ class AppUpdateManager(
                 }
             }
             _updateState.value = UpdateState.UpToDate
+            if (isManual) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        context,
+                        "У вас установлена последняя версия KidSee (${getCurrentVersionName()})",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
         } catch (e: Exception) {
             Timber.e(e, "Check for updates failed")
             _updateState.value = UpdateState.Error("Failed to check updates: ${e.message}")
+            if (isManual) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(context, "Ошибка проверки: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
         }
     }
 

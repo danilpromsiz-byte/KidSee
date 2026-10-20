@@ -22,7 +22,9 @@ import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.PictureInPicture
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Tablet
 import androidx.compose.material.icons.filled.Tv
 import androidx.compose.material.icons.filled.Videocam
@@ -71,6 +73,9 @@ fun ParentDashboardScreen(
     onDevicePipClick: (ChildDevice) -> Unit,
     onLockToggle: (ChildDevice) -> Unit,
     onAddDeviceClick: () -> Unit,
+    onCheckUpdateClick: () -> Unit = {},
+    onLockClick: () -> Unit = {},
+    onSettingsClick: () -> Unit = {},
     isTv: Boolean = false
 ) {
     val devices by devicesFlow.collectAsState(initial = emptyList())
@@ -94,7 +99,7 @@ fun ParentDashboardScreen(
             ) {
                 KidSeeMascot(size = 48.dp)
                 Spacer(modifier = Modifier.width(12.dp))
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.app_name),
                         style = KidSeeTypography.headlineLarge.copy(
@@ -105,6 +110,36 @@ fun ParentDashboardScreen(
                     Text(
                         text = stringResource(R.string.dashboard_subtitle),
                         style = KidSeeTypography.bodyMedium
+                    )
+                }
+
+                // Check for Updates Button
+                IconButton(onClick = onCheckUpdateClick) {
+                    Icon(
+                        imageVector = Icons.Default.SystemUpdate,
+                        contentDescription = "Check for updates",
+                        tint = WazeBlue,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                // Lock Parent Mode Button
+                IconButton(onClick = onLockClick) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "Lock Parent Controls",
+                        tint = WazeTextSecondary,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                // Settings Button
+                IconButton(onClick = onSettingsClick) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = "Settings",
+                        tint = WazeTextSecondary,
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }

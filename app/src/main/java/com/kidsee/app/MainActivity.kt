@@ -14,6 +14,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Rational
 import android.view.KeyEvent
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatDelegate
@@ -24,14 +25,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.core.os.LocaleListCompat
 import com.kidsee.app.ui.child.ChildActiveScreen
+import com.kidsee.app.ui.components.PinCodeDialog
+import com.kidsee.app.ui.components.SettingsDialog
 import com.kidsee.app.ui.components.UpdateDialog
 import com.kidsee.app.ui.onboarding.ChildSetupScreen
 import com.kidsee.app.ui.onboarding.OnboardingScreen
 import com.kidsee.app.ui.parent.DeviceDetailScreen
 import com.kidsee.app.ui.parent.ParentDashboardScreen
+import com.kidsee.app.ui.parent.ParentLockScreen
 import com.kidsee.app.util.AppUpdateManager
 import com.kidsee.app.util.UpdateState
 import com.kidsee.core.domain.model.ChildDevice
@@ -104,15 +109,24 @@ class MainActivity : ComponentActivity() {
 
         val roleState by repository.userRoleFlow.collectAsState(initial = null)
         val isSetupComplete by repository.isSetupCompleteFlow.collectAsState(initial = false)
+        val parentPin by repository.parentPinFlow.collectAsState(initial = "1234")
         val childState by app.stateManager.currentDeviceState.collectAsState()
         val updateState by appUpdateManager.updateState.collectAsState()
-        var showUpdateDialog by remember { mutableStateOf(true) }
+
+        var isParentUnlocked by rememberSaveable { mutableStateOf(false) }
+        var showUpdateDialog by remember { mutableStateOf(false) }
+        var showSettingsDialog by remember { mutableStateOf(false) }
+        var showPinDialog by remember { mutableStateOf(false) }
+        var pinPromptTitle by remember { mutableStateOf("Введите PIN-код родителя") }
+        var pinPromptDescription by remember { mutableStateOf("Защита настроек от детей") }
+        var pinExpectedValue by remember { mutableStateOf<String?>(null) }
+        var pinSuccessCallback by remember { mutableStateOf<((String) -> Unit)?>(null) }
 
         LaunchedEffect(Unit) {
-            appUpdateManager.checkForUpdates()
+            appUpdateManager.checkForUpdates(isManual = false)
         }
 
-        if (showUpdateDialog && (updateState is UpdateState.UpdateAvailable || updateState is UpdateState.Downloading)) {
+        if (showUpdateDialog || updateState is UpdateState.UpdateAvailable || updateState is UpdateState.Downloading) {
             UpdateDialog(
                 updateState = updateState,
                 onDismiss = { showUpdateDialog = false },
@@ -120,6 +134,72 @@ class MainActivity : ComponentActivity() {
                     scope.launch {
                         appUpdateManager.downloadAndInstall(releaseInfo)
                     }
+                }
+            )
+        }
+
+        // Settings Dialog
+        if (showSettingsDialog) {
+            SettingsDialog(
+                currentVersion = appUpdateManager.getCurrentVersionName(),
+                updateState = updateState,
+                onCheckUpdate = {
+                    scope.launch {
+                        appUpdateManager.checkForUpdates(isManual = true)
+                    }
+                },
+                onChangePin = {
+                    showSettingsDialog = false
+                    pinPromptTitle = "Введите текущий PIN"
+                    pinPromptDescription = "Подтвердите текущий PIN-код"
+                    pinExpectedValue = parentPin
+                    pinSuccessCallback = {
+                        // After verifying old PIN, prompt for new PIN
+                        pinPromptTitle = "Введите новый PIN-код"
+                        pinPromptDescription = "Задайте новый 4-значный PIN"
+                        pinExpectedValue = null // accept any 4 digits
+                        pinSuccessCallback = { newPin ->
+                            scope.launch {
+                                repository.saveParentPin(newPin)
+                                Toast.makeText(this@MainActivity, "PIN-код успешно изменен!", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        showPinDialog = true
+                    }
+                    showPinDialog = true
+                },
+                onSwitchRole = {
+                    showSettingsDialog = false
+                    scope.launch {
+                        val newRole = if (roleState == UserRole.PARENT) UserRole.CHILD else UserRole.PARENT
+                        repository.saveRole(newRole)
+                        if (newRole == UserRole.CHILD) {
+                            app.stateManager.startChildServices()
+                        } else {
+                            app.stateManager.stopChildServices()
+                        }
+                    }
+                },
+                onDismiss = { showSettingsDialog = false }
+            )
+        }
+
+        // PIN Code Protection Dialog
+        if (showPinDialog) {
+            PinCodeDialog(
+                correctPin = pinExpectedValue,
+                title = pinPromptTitle,
+                description = pinPromptDescription,
+                canDismiss = true,
+                onSuccess = { enteredPin ->
+                    showPinDialog = false
+                    val cb = pinSuccessCallback
+                    pinSuccessCallback = null
+                    cb?.invoke(enteredPin)
+                },
+                onDismiss = {
+                    showPinDialog = false
+                    pinSuccessCallback = null
                 }
             )
         }
@@ -159,55 +239,82 @@ class MainActivity : ComponentActivity() {
                     }
                 )
             } else {
-                ChildActiveScreen(device = childState)
+                ChildActiveScreen(
+                    device = childState,
+                    onSettingsClick = {
+                        pinPromptTitle = "Введите PIN-код родителя"
+                        pinPromptDescription = "Защита настроек от детей"
+                        pinExpectedValue = parentPin
+                        pinSuccessCallback = { showSettingsDialog = true }
+                        showPinDialog = true
+                    }
+                )
             }
         } else {
             // Parent Mode
-            val activeDevice = selectedDevice
-            if (activeDevice != null) {
-                DeviceDetailScreen(
-                    device = activeDevice,
-                    onBackClick = { selectedDevice = null },
-                    onPipClick = { enterPictureInPicture() },
-                    onLockToggle = {
-                        val cmdType = if (activeDevice.isScreenLocked) CommandType.UNLOCK_SCREEN else CommandType.LOCK_SCREEN
-                        sendCommand(activeDevice.id, cmdType)
-                        selectedDevice = activeDevice.copy(isScreenLocked = !activeDevice.isScreenLocked)
-                    },
-                    onMediaPlay = { sendCommand(activeDevice.id, CommandType.MEDIA_PLAY) },
-                    onMediaPause = { sendCommand(activeDevice.id, CommandType.MEDIA_PAUSE) },
-                    onMediaNext = { sendCommand(activeDevice.id, CommandType.MEDIA_NEXT) },
-                    onMediaPrev = { sendCommand(activeDevice.id, CommandType.MEDIA_PREV) },
-                    onVolumeChanged = { vol ->
-                        sendCommand(activeDevice.id, CommandType.VOLUME_SET, vol.toString())
-                    },
-                    onPushToTalkStart = {
-                        Timber.d("Push-to-Talk started for ${activeDevice.id}")
-                    },
-                    onPushToTalkStop = {
-                        Timber.d("Push-to-Talk stopped for ${activeDevice.id}")
-                    },
-                    onSendVoiceNote = {
-                        Timber.d("Send voice note requested for ${activeDevice.id}")
-                    }
+            if (!isParentUnlocked) {
+                ParentLockScreen(
+                    correctPin = parentPin,
+                    onUnlock = { isParentUnlocked = true }
                 )
             } else {
-                ParentDashboardScreen(
-                    devicesFlow = familyDevicesFlow,
-                    onDeviceClick = { device -> selectedDevice = device },
-                    onDevicePipClick = { device ->
-                        selectedDevice = device
-                        enterPictureInPicture()
-                    },
-                    onLockToggle = { device ->
-                        val cmdType = if (device.isScreenLocked) CommandType.UNLOCK_SCREEN else CommandType.LOCK_SCREEN
-                        sendCommand(device.id, cmdType)
-                    },
-                    onAddDeviceClick = {
-                        Timber.d("Add device clicked")
-                    },
-                    isTv = isTv
-                )
+                val activeDevice = selectedDevice
+                if (activeDevice != null) {
+                    DeviceDetailScreen(
+                        device = activeDevice,
+                        onBackClick = { selectedDevice = null },
+                        onPipClick = { enterPictureInPicture() },
+                        onLockToggle = {
+                            val cmdType = if (activeDevice.isScreenLocked) CommandType.UNLOCK_SCREEN else CommandType.LOCK_SCREEN
+                            sendCommand(activeDevice.id, cmdType)
+                            selectedDevice = activeDevice.copy(isScreenLocked = !activeDevice.isScreenLocked)
+                        },
+                        onMediaPlay = { sendCommand(activeDevice.id, CommandType.MEDIA_PLAY) },
+                        onMediaPause = { sendCommand(activeDevice.id, CommandType.MEDIA_PAUSE) },
+                        onMediaNext = { sendCommand(activeDevice.id, CommandType.MEDIA_NEXT) },
+                        onMediaPrev = { sendCommand(activeDevice.id, CommandType.MEDIA_PREV) },
+                        onVolumeChanged = { vol ->
+                            sendCommand(activeDevice.id, CommandType.VOLUME_SET, vol.toString())
+                        },
+                        onPushToTalkStart = {
+                            Timber.d("Push-to-Talk started for ${activeDevice.id}")
+                        },
+                        onPushToTalkStop = {
+                            Timber.d("Push-to-Talk stopped for ${activeDevice.id}")
+                        },
+                        onSendVoiceNote = {
+                            Timber.d("Send voice note requested for ${activeDevice.id}")
+                        }
+                    )
+                } else {
+                    ParentDashboardScreen(
+                        devicesFlow = familyDevicesFlow,
+                        onDeviceClick = { device -> selectedDevice = device },
+                        onDevicePipClick = { device ->
+                            selectedDevice = device
+                            enterPictureInPicture()
+                        },
+                        onLockToggle = { device ->
+                            val cmdType = if (device.isScreenLocked) CommandType.UNLOCK_SCREEN else CommandType.LOCK_SCREEN
+                            sendCommand(device.id, cmdType)
+                        },
+                        onAddDeviceClick = {
+                            Timber.d("Add device clicked")
+                        },
+                        onCheckUpdateClick = {
+                            scope.launch {
+                                appUpdateManager.checkForUpdates(isManual = true)
+                            }
+                        },
+                        onLockClick = {
+                            isParentUnlocked = false
+                        },
+                        onSettingsClick = {
+                            showSettingsDialog = true
+                        },
+                        isTv = isTv
+                    )
+                }
             }
         }
     }

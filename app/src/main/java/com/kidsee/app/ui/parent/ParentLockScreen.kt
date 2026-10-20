@@ -183,7 +183,7 @@ fun ParentLockScreen(
                                 if (key == "⌫") {
                                     Icon(
                                         imageVector = Icons.Default.Backspace,
-                                        contentDescription = "Backspace",
+                                        contentDescription = null,
                                         tint = WazeTextPrimary,
                                         modifier = Modifier.size(24.dp)
                                     )

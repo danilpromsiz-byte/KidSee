@@ -188,7 +188,7 @@ fun AddDeviceDialog(
                     IconButton(onClick = onDismiss) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
+                            contentDescription = null,
                             tint = WazeTextSecondary
                         )
                     }
@@ -245,7 +245,7 @@ fun AddDeviceDialog(
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = Icons.Default.Edit,
-                                        contentDescription = "Edit code",
+                                        contentDescription = null,
                                         tint = WazeTextPrimary,
                                         modifier = Modifier.size(18.dp)
                                     )
@@ -268,7 +268,7 @@ fun AddDeviceDialog(
                                 Box(contentAlignment = Alignment.Center) {
                                     Icon(
                                         imageVector = Icons.Default.ContentCopy,
-                                        contentDescription = "Copy code",
+                                        contentDescription = null,
                                         tint = WazeBlue,
                                         modifier = Modifier.size(18.dp)
                                     )

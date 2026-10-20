@@ -221,7 +221,7 @@ private fun PermissionStepCard(
             if (isGranted) {
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "Granted",
+                    contentDescription = null,
                     tint = WazeGreen,
                     modifier = Modifier.size(24.dp)
                 )

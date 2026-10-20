@@ -89,6 +89,11 @@ class LanDiscoveryManager(
 
     // Active State & Discovery Cache
     private var activeDeviceProvider: (() -> ChildDevice?)? = null
+    private var activeFrameProvider: (() -> ByteArray?)? = null
+
+    fun setFrameProvider(provider: () -> ByteArray?) {
+        activeFrameProvider = provider
+    }
     private val discoveredDevices = ConcurrentHashMap<String, ChildDevice>()
     private val deviceIpMap = ConcurrentHashMap<String, String>() // deviceId -> IP address
     private val knownChildIps = ConcurrentHashMap.newKeySet<String>() // Set of IP addresses
@@ -283,6 +288,25 @@ class LanDiscoveryManager(
             val firstLine = reader.readLine() ?: return
 
             when {
+                // HTTP GET /kidsee/screen (Live screen frame stream)
+                firstLine.startsWith("GET /kidsee/screen") -> {
+                    val frame = activeFrameProvider?.invoke()
+                    if (frame != null && frame.isNotEmpty()) {
+                        val response = "HTTP/1.1 200 OK\r\n" +
+                                "Content-Type: image/jpeg\r\n" +
+                                "Content-Length: ${frame.size}\r\n" +
+                                "Access-Control-Allow-Origin: *\r\n" +
+                                "Connection: close\r\n\r\n"
+                        output.write(response.toByteArray(Charsets.UTF_8))
+                        output.write(frame)
+                        output.flush()
+                    } else {
+                        val notFound = "HTTP/1.1 404 No Frame\r\nConnection: close\r\n\r\n"
+                        output.write(notFound.toByteArray(Charsets.UTF_8))
+                        output.flush()
+                    }
+                }
+
                 // HTTP GET /kidsee/status (or /status or /)
                 firstLine.startsWith("GET") -> {
                     val currentDev = activeDeviceProvider?.invoke()
@@ -602,6 +626,56 @@ class LanDiscoveryManager(
                 s.close()
             }
             null
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    /**
+     * Fetches current JPEG screen frame directly from child device over local Wi-Fi.
+     */
+    suspend fun fetchScreenFrame(deviceId: String): ByteArray? {
+        val ip = deviceIpMap[deviceId] ?: return null
+        return try {
+            val s = Socket()
+            s.connect(InetSocketAddress(ip, DISCOVERY_PORT), 350)
+            s.soTimeout = 800
+
+            val writer = OutputStreamWriter(s.getOutputStream(), Charsets.UTF_8)
+            writer.write("GET /kidsee/screen HTTP/1.1\r\nHost: $ip\r\nConnection: close\r\n\r\n")
+            writer.flush()
+
+            val input = s.getInputStream()
+            val reader = BufferedReader(InputStreamReader(input, Charsets.UTF_8))
+            val statusLine = reader.readLine()
+            if (statusLine != null && statusLine.contains("200")) {
+                var contentLength = 0
+                var line = reader.readLine()
+                while (!line.isNullOrEmpty()) {
+                    if (line.lowercase().startsWith("content-length:")) {
+                        contentLength = line.substringAfter(":").trim().toIntOrNull() ?: 0
+                    }
+                    line = reader.readLine()
+                }
+
+                if (contentLength > 0) {
+                    val buffer = ByteArray(contentLength)
+                    var readTotal = 0
+                    while (readTotal < contentLength) {
+                        val r = input.read(buffer, readTotal, contentLength - readTotal)
+                        if (r == -1) break
+                        readTotal += r
+                    }
+                    s.close()
+                    buffer
+                } else {
+                    s.close()
+                    null
+                }
+            } else {
+                s.close()
+                null
+            }
         } catch (_: Exception) {
             null
         }

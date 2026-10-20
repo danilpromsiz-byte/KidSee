@@ -231,7 +231,7 @@ private fun KeypadButton(
             if (text == "⌫") {
                 Icon(
                     imageVector = Icons.Default.Backspace,
-                    contentDescription = "Backspace",
+                    contentDescription = null,
                     tint = WazeTextPrimary,
                     modifier = Modifier.size(22.dp)
                 )

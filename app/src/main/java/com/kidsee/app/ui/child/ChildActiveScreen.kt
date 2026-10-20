@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cast
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
@@ -29,12 +30,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.kidsee.app.KidSeeApp
-import com.kidsee.core.ui.R
+import com.kidsee.app.service.ScreenCaptureService
 import com.kidsee.core.domain.model.ChildDevice
+import com.kidsee.core.ui.R
 import com.kidsee.core.ui.components.KidSeeCard
 import com.kidsee.core.ui.components.KidSeeMascot
+import com.kidsee.core.ui.components.KidSeePillButton
 import com.kidsee.core.ui.components.KidSeeStatusBadge
 import com.kidsee.core.ui.theme.KidSeeTypography
 import com.kidsee.core.ui.theme.WazeBlue
@@ -48,7 +50,8 @@ import com.kidsee.core.ui.theme.WazeWarmWhite
 @Composable
 fun ChildActiveScreen(
     device: ChildDevice?,
-    onSettingsClick: () -> Unit = {}
+    onSettingsClick: () -> Unit = {},
+    onStartStreamClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -64,7 +67,7 @@ fun ChildActiveScreen(
             IconButton(onClick = onSettingsClick) {
                 Icon(
                     imageVector = Icons.Default.Settings,
-                    contentDescription = "Parent Settings",
+                    contentDescription = stringResource(R.string.settings_title),
                     tint = WazeTextSecondary
                 )
             }
@@ -143,9 +146,8 @@ fun ChildActiveScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(10.dp))
-
         if (isDefaultFamily) {
+            Spacer(modifier = Modifier.height(10.dp))
             Text(
                 text = stringResource(R.string.child_waiting_parent),
                 style = KidSeeTypography.bodySmall.copy(color = WazeTextSecondary),
@@ -155,6 +157,64 @@ fun ChildActiveScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        // Screen Mirroring Status & Action Card
+        KidSeeCard(elevation = 3.dp) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Cast,
+                        contentDescription = null,
+                        tint = if (ScreenCaptureService.isRunning) WazeGreen else WazeBlue,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.perm_screen_capture),
+                            style = KidSeeTypography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                        Text(
+                            text = stringResource(R.string.perm_screen_capture_desc),
+                            style = KidSeeTypography.bodySmall.copy(color = WazeTextSecondary)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (ScreenCaptureService.isRunning) {
+                    Surface(
+                        shape = RoundedCornerShape(percent = 50),
+                        color = WazeGreenLight,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = stringResource(R.string.screen_stream_active_badge),
+                            style = KidSeeTypography.labelMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = WazeGreen
+                            ),
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(vertical = 10.dp)
+                        )
+                    }
+                } else {
+                    KidSeePillButton(
+                        text = stringResource(R.string.btn_enable_screen_stream),
+                        onClick = onStartStreamClick,
+                        backgroundColor = WazeBlue,
+                        modifier = Modifier.fillMaxWidth(),
+                        height = 44.dp
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Protection summary card
         KidSeeCard(elevation = 3.dp) {

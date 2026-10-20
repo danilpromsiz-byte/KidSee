@@ -8,6 +8,7 @@ import android.os.Build
 import com.kidsee.app.service.KidSeeDeviceAdmin
 import com.kidsee.app.service.KidSeeMediaMonitorService
 import com.kidsee.app.service.KidSeeOverlayLockService
+import com.kidsee.app.service.ScreenCaptureService
 import com.kidsee.app.service.VoiceMessageManager
 import com.kidsee.core.data.local.KidSeePreferences
 import com.kidsee.core.data.repository.KidSeeRepository
@@ -60,6 +61,8 @@ class KidSeeStateManager(
     private val _currentDeviceState = MutableStateFlow<ChildDevice?>(null)
     val currentDeviceState: StateFlow<ChildDevice?> = _currentDeviceState.asStateFlow()
 
+    var onStreamRequested: (() -> Unit)? = null
+
     fun init() {
         scope.launch {
             val role = repository.userRoleFlow.firstOrNull()
@@ -91,6 +94,7 @@ class KidSeeStateManager(
         _currentDeviceState.value = syncInitial
 
         // 0. Start LAN embedded server & broadcasting of child state
+        lanDiscoveryManager.setFrameProvider { ScreenCaptureService.latestJpegFrame }
         lanDiscoveryManager.startBroadcasting { _currentDeviceState.value }
 
         scope.launch {
@@ -228,6 +232,12 @@ class KidSeeStateManager(
             }
             CommandType.VOLUME_UP -> mediaService?.changeVolumeBy(1)
             CommandType.VOLUME_DOWN -> mediaService?.changeVolumeBy(-1)
+            CommandType.START_STREAM -> {
+                onStreamRequested?.invoke()
+            }
+            CommandType.STOP_STREAM -> {
+                ScreenCaptureService.stop(context)
+            }
             CommandType.SET_FAMILY -> {
                 val newFamilyId = command.payload?.trim() ?: ""
                 if (newFamilyId.isNotBlank()) {

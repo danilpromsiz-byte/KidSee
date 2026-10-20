@@ -1,6 +1,9 @@
 package com.kidsee.app.ui.parent
 
-import android.view.ViewGroup
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +43,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -49,37 +53,42 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import com.kidsee.core.ui.R
 import com.kidsee.core.domain.model.ChildDevice
+import com.kidsee.core.network.lan.LanDiscoveryManager
+import com.kidsee.core.ui.R
 import com.kidsee.core.ui.components.KidSeeCard
 import com.kidsee.core.ui.components.KidSeeMascot
 import com.kidsee.core.ui.components.KidSeePillButton
-import com.kidsee.core.ui.components.KidSeeStatusBadge
 import com.kidsee.core.ui.theme.KidSeeTypography
 import com.kidsee.core.ui.theme.WazeBlue
 import com.kidsee.core.ui.theme.WazeBorder
-import com.kidsee.core.ui.theme.WazeCardBg
 import com.kidsee.core.ui.theme.WazeGreen
 import com.kidsee.core.ui.theme.WazeGreenLight
 import com.kidsee.core.ui.theme.WazeOrange
-import com.kidsee.core.ui.theme.WazeOrangeLight
 import com.kidsee.core.ui.theme.WazePurple
 import com.kidsee.core.ui.theme.WazeRed
 import com.kidsee.core.ui.theme.WazeRedLight
 import com.kidsee.core.ui.theme.WazeTextPrimary
 import com.kidsee.core.ui.theme.WazeTextSecondary
 import com.kidsee.core.ui.theme.WazeWarmWhite
-import org.webrtc.SurfaceViewRenderer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 
 @Composable
 fun DeviceDetailScreen(
     device: ChildDevice,
+    lanDiscoveryManager: LanDiscoveryManager? = null,
+    onRequestStream: () -> Unit = {},
     onBackClick: () -> Unit,
     onPipClick: () -> Unit,
     onLockToggle: () -> Unit,
@@ -96,6 +105,26 @@ fun DeviceDetailScreen(
     var isTalkingLive by remember { mutableStateOf(false) }
     var volumeSlider by remember(device.currentVolume) { mutableFloatStateOf(device.currentVolume.toFloat()) }
 
+    var currentBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+    // Real-time polling loop for child screen frames over Wi-Fi (~8 fps)
+    LaunchedEffect(device.id, lanDiscoveryManager) {
+        while (isActive) {
+            val frameBytes = withContext(Dispatchers.IO) {
+                lanDiscoveryManager?.fetchScreenFrame(device.id)
+            }
+            if (frameBytes != null && frameBytes.isNotEmpty()) {
+                val bmp = BitmapFactory.decodeByteArray(frameBytes, 0, frameBytes.size)
+                if (bmp != null) {
+                    currentBitmap = bmp
+                }
+            } else if (!device.isOnline) {
+                currentBitmap = null
+            }
+            delay(120)
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -109,14 +138,17 @@ fun DeviceDetailScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             IconButton(onClick = onBackClick) {
-                Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = stringResource(R.string.btn_back)
+                )
             }
 
             Spacer(modifier = Modifier.width(8.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = device.name.ifEmpty { "Child Device" },
+                    text = device.name.ifEmpty { stringResource(R.string.device_detail_default_name) },
                     style = KidSeeTypography.titleLarge
                 )
                 Text(
@@ -129,7 +161,7 @@ fun DeviceDetailScreen(
             IconButton(onClick = onPipClick) {
                 Icon(
                     imageVector = Icons.Default.PictureInPicture,
-                    contentDescription = "PiP",
+                    contentDescription = stringResource(R.string.pip_button),
                     tint = WazeBlue
                 )
             }
@@ -137,7 +169,7 @@ fun DeviceDetailScreen(
 
         Spacer(modifier = Modifier.height(14.dp))
 
-        // Screen Video View (WebRTC Live Stream Canvas)
+        // Screen Video View (Live Screen Stream Canvas)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -146,38 +178,86 @@ fun DeviceDetailScreen(
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
-            AndroidView(
-                factory = { ctx ->
-                    SurfaceViewRenderer(ctx).apply {
-                        layoutParams = ViewGroup.LayoutParams(
-                            ViewGroup.LayoutParams.MATCH_PARENT,
-                            ViewGroup.LayoutParams.MATCH_PARENT
+            val bmp = currentBitmap
+            if (bmp != null) {
+                Image(
+                    bitmap = bmp.asImageBitmap(),
+                    contentDescription = stringResource(R.string.screen_mirror_content_desc),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                // Inactive stream placeholder
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    KidSeeMascot(size = 54.dp)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = stringResource(
+                            if (device.isOnline) R.string.screen_stream_not_active else R.string.screen_stream_offline
+                        ),
+                        color = Color.White,
+                        style = KidSeeTypography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.screen_stream_prompt_desc),
+                        color = Color.White.copy(alpha = 0.7f),
+                        style = KidSeeTypography.bodySmall,
+                        textAlign = TextAlign.Center
+                    )
+                    if (device.isOnline) {
+                        Spacer(modifier = Modifier.height(10.dp))
+                        KidSeePillButton(
+                            text = stringResource(R.string.btn_request_stream),
+                            onClick = onRequestStream,
+                            backgroundColor = WazeBlue,
+                            height = 36.dp
                         )
                     }
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-
-            // Overlay indicator if stream is starting or idle
-            if (!device.isVideoPlaying && !device.isWebRtcStreamActive) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    KidSeeMascot(size = 64.dp)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = if (device.isOnline) "Ready to Stream" else "Device Offline",
-                        color = Color.White,
-                        style = KidSeeTypography.titleMedium
-                    )
                 }
             }
 
-            // Live Audio indicator pill
+            // Live streaming red badge in top-left
+            if (currentBitmap != null) {
+                Surface(
+                    shape = RoundedCornerShape(percent = 50),
+                    color = WazeRed,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(10.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .clip(CircleShape)
+                                .background(Color.White)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = stringResource(R.string.screen_stream_active_badge),
+                            style = KidSeeTypography.labelSmall.copy(
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                    }
+                }
+            }
+
+            // Live Audio indicator pill in top-right
             Surface(
                 shape = RoundedCornerShape(percent = 50),
                 color = if (isAudioMuted) Color.Black.copy(alpha = 0.6f) else WazeGreen.copy(alpha = 0.85f),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(12.dp)
+                    .padding(10.dp)
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
@@ -191,9 +271,45 @@ fun DeviceDetailScreen(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = if (isAudioMuted) "Muted" else "Audio ON",
+                        text = stringResource(if (isAudioMuted) R.string.audio_muted else R.string.audio_on),
                         style = KidSeeTypography.labelSmall.copy(color = Color.White)
                     )
+                }
+            }
+        }
+
+        // Active Video Notification Banner
+        if (device.isVideoPlaying || !device.currentMediaTitle.isNullOrEmpty()) {
+            Spacer(modifier = Modifier.height(10.dp))
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = WazeBlue.copy(alpha = 0.12f),
+                border = BorderStroke(1.5.dp, WazeBlue),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        tint = WazeBlue,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(
+                                R.string.status_video_playing,
+                                device.currentMediaTitle ?: device.currentAppLabel ?: ""
+                            ),
+                            style = KidSeeTypography.titleSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = WazeBlue
+                            )
+                        )
+                    }
                 }
             }
         }
@@ -207,7 +323,7 @@ fun DeviceDetailScreen(
         ) {
             // Mute / Unmute Sound
             KidSeePillButton(
-                text = if (isAudioMuted) "Hear Sound" else "Mute Sound",
+                text = stringResource(if (isAudioMuted) R.string.btn_hear_sound else R.string.btn_mute_sound),
                 onClick = { isAudioMuted = !isAudioMuted },
                 backgroundColor = if (isAudioMuted) WazeBorder else WazeBlue,
                 contentColor = if (isAudioMuted) WazeTextPrimary else Color.White,
@@ -251,7 +367,7 @@ fun DeviceDetailScreen(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (isTalkingLive) "Speaking…" else "Hold to Talk",
+                        text = stringResource(if (isTalkingLive) R.string.status_speaking else R.string.btn_hold_to_talk),
                         style = KidSeeTypography.titleMedium.copy(
                             color = Color.White,
                             fontWeight = FontWeight.Bold
@@ -267,7 +383,7 @@ fun DeviceDetailScreen(
         KidSeeCard(elevation = 3.dp) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    text = "Video & Media Controls",
+                    text = stringResource(R.string.media_controls_title),
                     style = KidSeeTypography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
 
@@ -286,7 +402,11 @@ fun DeviceDetailScreen(
                             .clip(CircleShape)
                             .background(Color(0xFFF0F4F8))
                     ) {
-                        Icon(imageVector = Icons.Default.SkipPrevious, contentDescription = "Prev", tint = WazeBlue)
+                        Icon(
+                            imageVector = Icons.Default.SkipPrevious,
+                            contentDescription = stringResource(R.string.btn_prev),
+                            tint = WazeBlue
+                        )
                     }
 
                     IconButton(
@@ -296,7 +416,12 @@ fun DeviceDetailScreen(
                             .clip(CircleShape)
                             .background(WazeBlue)
                     ) {
-                        Icon(imageVector = Icons.Default.Pause, contentDescription = "Pause", tint = Color.White, modifier = Modifier.size(32.dp))
+                        Icon(
+                            imageVector = Icons.Default.Pause,
+                            contentDescription = stringResource(R.string.btn_pause),
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
                     }
 
                     IconButton(
@@ -306,7 +431,12 @@ fun DeviceDetailScreen(
                             .clip(CircleShape)
                             .background(WazeGreen)
                     ) {
-                        Icon(imageVector = Icons.Default.PlayArrow, contentDescription = "Play", tint = Color.White, modifier = Modifier.size(32.dp))
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = stringResource(R.string.btn_play),
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
                     }
 
                     IconButton(
@@ -316,7 +446,11 @@ fun DeviceDetailScreen(
                             .clip(CircleShape)
                             .background(Color(0xFFF0F4F8))
                     ) {
-                        Icon(imageVector = Icons.Default.SkipNext, contentDescription = "Next", tint = WazeBlue)
+                        Icon(
+                            imageVector = Icons.Default.SkipNext,
+                            contentDescription = stringResource(R.string.btn_next),
+                            tint = WazeBlue
+                        )
                     }
                 }
 
@@ -377,20 +511,26 @@ fun DeviceDetailScreen(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = if (device.isScreenLocked) "Device is Locked" else "Block Screen Now",
+                        text = stringResource(
+                            if (device.isScreenLocked) R.string.device_locked_title else R.string.block_screen_now_title
+                        ),
                         style = KidSeeTypography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             color = if (device.isScreenLocked) WazeGreen else WazeRed
                         )
                     )
                     Text(
-                        text = if (device.isScreenLocked) "Tap to unlock child screen" else "Instantly blocks access & shows break screen",
+                        text = stringResource(
+                            if (device.isScreenLocked) R.string.device_locked_desc else R.string.block_screen_now_desc
+                        ),
                         style = KidSeeTypography.bodyMedium.copy(fontSize = 12.sp)
                     )
                 }
 
                 KidSeePillButton(
-                    text = if (device.isScreenLocked) "Unlock" else "Lock",
+                    text = stringResource(
+                        if (device.isScreenLocked) R.string.btn_unlock else R.string.btn_lock
+                    ),
                     onClick = onLockToggle,
                     backgroundColor = if (device.isScreenLocked) WazeGreen else WazeRed,
                     height = 44.dp
@@ -406,7 +546,11 @@ fun DeviceDetailScreen(
             onClick = onSendVoiceNote,
             backgroundColor = WazeOrange,
             icon = {
-                Icon(imageVector = Icons.Default.RecordVoiceOver, contentDescription = null, modifier = Modifier.size(20.dp))
+                Icon(
+                    imageVector = Icons.Default.RecordVoiceOver,
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
             },
             modifier = Modifier.fillMaxWidth(),
             height = 54.dp

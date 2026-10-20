@@ -122,7 +122,7 @@ fun ParentDashboardScreen(
                 IconButton(onClick = onRescanClick) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
-                        contentDescription = "Rescan devices",
+                        contentDescription = stringResource(R.string.btn_rescan),
                         tint = WazeBlue,
                         modifier = Modifier.size(24.dp)
                     )
@@ -132,7 +132,7 @@ fun ParentDashboardScreen(
                 IconButton(onClick = onCheckUpdateClick) {
                     Icon(
                         imageVector = Icons.Default.SystemUpdate,
-                        contentDescription = "Check for updates",
+                        contentDescription = stringResource(R.string.check_updates_title),
                         tint = WazeBlue,
                         modifier = Modifier.size(24.dp)
                     )
@@ -142,7 +142,7 @@ fun ParentDashboardScreen(
                 IconButton(onClick = onLockClick) {
                     Icon(
                         imageVector = Icons.Default.Lock,
-                        contentDescription = "Lock Parent Controls",
+                        contentDescription = stringResource(R.string.btn_lock),
                         tint = WazeTextSecondary,
                         modifier = Modifier.size(24.dp)
                     )
@@ -152,7 +152,7 @@ fun ParentDashboardScreen(
                 IconButton(onClick = onSettingsClick) {
                     Icon(
                         imageVector = Icons.Default.Settings,
-                        contentDescription = "Settings",
+                        contentDescription = stringResource(R.string.settings_title),
                         tint = WazeTextSecondary,
                         modifier = Modifier.size(24.dp)
                     )
@@ -379,7 +379,7 @@ private fun DeviceCardContent(
             IconButton(onClick = onPipClick) {
                 Icon(
                     imageVector = Icons.Default.PictureInPicture,
-                    contentDescription = "PiP",
+                    contentDescription = stringResource(R.string.pip_button),
                     tint = WazeBlue
                 )
             }
@@ -388,7 +388,7 @@ private fun DeviceCardContent(
             IconButton(onClick = onLockClick) {
                 Icon(
                     imageVector = if (device.isScreenLocked) Icons.Default.LockOpen else Icons.Default.Lock,
-                    contentDescription = "Lock",
+                    contentDescription = stringResource(if (device.isScreenLocked) R.string.btn_unlock else R.string.btn_lock),
                     tint = if (device.isScreenLocked) WazeGreen else WazeRed
                 )
             }

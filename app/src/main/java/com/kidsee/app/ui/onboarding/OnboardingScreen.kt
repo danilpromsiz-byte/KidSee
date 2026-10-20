@@ -297,7 +297,7 @@ private fun RoleSelectionStep(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.btn_back),
                     tint = WazeTextPrimary
                 )
             }
@@ -444,7 +444,7 @@ private fun ParentAgeVerificationStep(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.btn_back),
                     tint = WazeTextPrimary
                 )
             }
@@ -720,7 +720,7 @@ private fun ParentCreatePinStep(
             }) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.btn_back),
                     tint = WazeTextPrimary
                 )
             }
@@ -838,7 +838,7 @@ private fun ParentCreatePinStep(
                                 if (key == "⌫") {
                                     Icon(
                                         imageVector = Icons.AutoMirrored.Filled.Backspace,
-                                        contentDescription = "Backspace",
+                                        contentDescription = null,
                                         tint = WazeTextPrimary,
                                         modifier = Modifier.size(24.dp)
                                     )

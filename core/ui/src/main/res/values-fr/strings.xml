@@ -185,4 +185,37 @@
     <string name="enter_new_pin_desc">Définissez un nouveau code PIN à 4 chiffres</string>
     <string name="direct_ip_probe_toast">Envoi de la requête à %1$s…</string>
     <string name="wifi_ip_badge">📡 Wi-Fi IP: %1$s</string>
+
+    <!-- Device Detail & Screen Mirroring -->
+    <string name="btn_back">Retour</string>
+    <string name="device_detail_default_name">Appareil de l\'enfant</string>
+    <string name="screen_stream_ready">Prêt à diffuser</string>
+    <string name="screen_stream_offline">Appareil hors ligne</string>
+    <string name="screen_stream_not_active">Diffusion inactive</string>
+    <string name="screen_stream_prompt_desc">Activez la diffusion sur l\'appareil de l\'enfant pour regarder en direct</string>
+    <string name="btn_request_stream">Demander la diffusion</string>
+    <string name="status_video_playing">▶ Lecture vidéo en cours : %1$s</string>
+    <string name="audio_muted">Muet</string>
+    <string name="audio_on">Audio activé</string>
+    <string name="btn_hear_sound">Écouter le son</string>
+    <string name="btn_mute_sound">Couper le son</string>
+    <string name="btn_hold_to_talk">Maintenez pour parler</string>
+    <string name="status_speaking">Vous parlez…</string>
+    <string name="media_controls_title">Contrôle vidéo et multimédia</string>
+    <string name="btn_prev">Précédent</string>
+    <string name="btn_pause">Pause</string>
+    <string name="btn_play">Lecture</string>
+    <string name="btn_next">Suivant</string>
+    <string name="device_locked_title">Appareil verrouillé</string>
+    <string name="device_locked_desc">Appuyez pour déverrouiller l\'écran de l\'enfant</string>
+    <string name="block_screen_now_title">Bloquer l\'écran maintenant</string>
+    <string name="block_screen_now_desc">Bloque immédiatement l\'accès et affiche la pause</string>
+    <string name="btn_unlock">Déverrouiller</string>
+    <string name="btn_lock">Verrouiller</string>
+    <string name="screen_mirror_content_desc">Diffusion en direct de l\'écran de l\'enfant</string>
+    <string name="screen_stream_started_toast">Diffusion de l\'écran démarrée</string>
+    <string name="perm_screen_capture">Diffusion d\'écran</string>
+    <string name="perm_screen_capture_desc">Permet aux parents de voir l\'écran en direct via Wi-Fi</string>
+    <string name="btn_enable_screen_stream">Démarrer la diffusion d\'écran</string>
+    <string name="screen_stream_active_badge">EN DIRECT</string>
 </resources>

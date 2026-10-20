@@ -1,5 +1,6 @@
 package com.kidsee.app
 
+import android.app.Activity
 import android.app.PendingIntent
 import android.app.PictureInPictureParams
 import android.app.RemoteAction
@@ -10,12 +11,14 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
 import android.graphics.drawable.Icon
+import android.media.projection.MediaProjectionManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Rational
 import android.view.KeyEvent
 import android.widget.Toast
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Composable
@@ -31,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.os.LocaleListCompat
+import com.kidsee.app.service.ScreenCaptureService
 import com.kidsee.app.ui.child.ChildActiveScreen
 import com.kidsee.app.ui.components.AddDeviceDialog
 import com.kidsee.app.ui.components.PinCodeDialog
@@ -70,6 +74,35 @@ class MainActivity : AppCompatActivity() {
     private var selectedDevice by mutableStateOf<ChildDevice?>(null)
     private val appUpdateManager by lazy { AppUpdateManager(this) }
 
+    private val mediaProjectionLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK && result.data != null) {
+            val serviceIntent = Intent(this, ScreenCaptureService::class.java).apply {
+                action = ScreenCaptureService.ACTION_START
+                putExtra(ScreenCaptureService.EXTRA_RESULT_CODE, result.resultCode)
+                putExtra(ScreenCaptureService.EXTRA_RESULT_DATA, result.data)
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                startForegroundService(serviceIntent)
+            } else {
+                startService(serviceIntent)
+            }
+            Toast.makeText(this, R.string.screen_stream_started_toast, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    fun startScreenCapture() {
+        val mpm = getSystemService(Context.MEDIA_PROJECTION_SERVICE) as? MediaProjectionManager
+        if (mpm != null) {
+            try {
+                mediaProjectionLauncher.launch(mpm.createScreenCaptureIntent())
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to launch screen capture intent")
+            }
+        }
+    }
+
     private val pipReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             val device = selectedDevice ?: return
@@ -102,6 +135,12 @@ class MainActivity : AppCompatActivity() {
             registerReceiver(pipReceiver, filter, RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(pipReceiver, filter)
+        }
+
+        (application as KidSeeApp).stateManager.onStreamRequested = {
+            runOnUiThread {
+                startScreenCapture()
+            }
         }
 
         setContent {
@@ -333,6 +372,9 @@ class MainActivity : AppCompatActivity() {
                             pinExpectedValue = parentPin
                             pinSuccessCallback = { showSettingsDialog = true }
                             showPinDialog = true
+                        },
+                        onStartStreamClick = {
+                            startScreenCapture()
                         }
                     )
                 }
@@ -348,6 +390,15 @@ class MainActivity : AppCompatActivity() {
                     if (activeDevice != null) {
                         DeviceDetailScreen(
                             device = activeDevice,
+                            lanDiscoveryManager = app.stateManager.lanDiscoveryManager,
+                            onRequestStream = {
+                                sendCommand(activeDevice.id, CommandType.START_STREAM)
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    localizedContext.getString(R.string.btn_request_stream),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            },
                             onBackClick = { selectedDevice = null },
                             onPipClick = { enterPictureInPicture() },
                             onLockToggle = {

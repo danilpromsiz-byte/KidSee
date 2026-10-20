@@ -185,4 +185,37 @@
     <string name="enter_new_pin_desc">Establece un nuevo PIN de 4 dígitos</string>
     <string name="direct_ip_probe_toast">Enviando solicitud a %1$s…</string>
     <string name="wifi_ip_badge">📡 Wi-Fi IP: %1$s</string>
+
+    <!-- Device Detail & Screen Mirroring -->
+    <string name="btn_back">Atrás</string>
+    <string name="device_detail_default_name">Dispositivo del niño</string>
+    <string name="screen_stream_ready">Listo para transmitir</string>
+    <string name="screen_stream_offline">Dispositivo sin conexión</string>
+    <string name="screen_stream_not_active">Transmisión no iniciada</string>
+    <string name="screen_stream_prompt_desc">Activa la transmisión en el dispositivo del niño para ver en vivo</string>
+    <string name="btn_request_stream">Solicitar transmisión</string>
+    <string name="status_video_playing">▶ Reproduciendo video: %1$s</string>
+    <string name="audio_muted">Silenciado</string>
+    <string name="audio_on">Audio activo</string>
+    <string name="btn_hear_sound">Escuchar sonido</string>
+    <string name="btn_mute_sound">Silenciar sonido</string>
+    <string name="btn_hold_to_talk">Mantén para hablar</string>
+    <string name="status_speaking">Hablando…</string>
+    <string name="media_controls_title">Control de video y medios</string>
+    <string name="btn_prev">Anterior</string>
+    <string name="btn_pause">Pausa</string>
+    <string name="btn_play">Reproducir</string>
+    <string name="btn_next">Siguiente</string>
+    <string name="device_locked_title">Dispositivo bloqueado</string>
+    <string name="device_locked_desc">Toca para desbloquear la pantalla del niño</string>
+    <string name="block_screen_now_title">Bloquear pantalla ahora</string>
+    <string name="block_screen_now_desc">Bloquea el acceso al instante y muestra descanso</string>
+    <string name="btn_unlock">Desbloquear</string>
+    <string name="btn_lock">Bloquear</string>
+    <string name="screen_mirror_content_desc">Transmisión de pantalla del niño</string>
+    <string name="screen_stream_started_toast">Transmisión de pantalla iniciada</string>
+    <string name="perm_screen_capture">Transmisión de pantalla</string>
+    <string name="perm_screen_capture_desc">Permite a los padres ver la pantalla en vivo por Wi-Fi</string>
+    <string name="btn_enable_screen_stream">Iniciar transmisión de pantalla</string>
+    <string name="screen_stream_active_badge">EN VIVO</string>
 </resources>

@@ -185,4 +185,37 @@
     <string name="enter_new_pin_desc">Set a new 4-digit PIN</string>
     <string name="direct_ip_probe_toast">Probing device at %1$s…</string>
     <string name="wifi_ip_badge">📡 Wi-Fi IP: %1$s</string>
+
+    <!-- Device Detail & Screen Mirroring -->
+    <string name="btn_back">Back</string>
+    <string name="device_detail_default_name">Child Device</string>
+    <string name="screen_stream_ready">Ready to Stream</string>
+    <string name="screen_stream_offline">Device Offline</string>
+    <string name="screen_stream_not_active">Screen Stream Inactive</string>
+    <string name="screen_stream_prompt_desc">Enable screen streaming on child device to view live</string>
+    <string name="btn_request_stream">Request Screen Stream</string>
+    <string name="status_video_playing">▶ Video is Playing: %1$s</string>
+    <string name="audio_muted">Muted</string>
+    <string name="audio_on">Audio ON</string>
+    <string name="btn_hear_sound">Hear Sound</string>
+    <string name="btn_mute_sound">Mute Sound</string>
+    <string name="btn_hold_to_talk">Hold to Talk</string>
+    <string name="status_speaking">Speaking…</string>
+    <string name="media_controls_title">Video &amp; Media Controls</string>
+    <string name="btn_prev">Previous</string>
+    <string name="btn_pause">Pause</string>
+    <string name="btn_play">Play</string>
+    <string name="btn_next">Next</string>
+    <string name="device_locked_title">Device is Locked</string>
+    <string name="device_locked_desc">Tap to unlock child screen</string>
+    <string name="block_screen_now_title">Block Screen Now</string>
+    <string name="block_screen_now_desc">Instantly blocks access &amp; shows break screen</string>
+    <string name="btn_unlock">Unlock</string>
+    <string name="btn_lock">Lock</string>
+    <string name="screen_mirror_content_desc">Child screen live stream</string>
+    <string name="screen_stream_started_toast">Screen stream started</string>
+    <string name="perm_screen_capture">Screen Streaming</string>
+    <string name="perm_screen_capture_desc">Allows parent to view child screen live over Wi-Fi</string>
+    <string name="btn_enable_screen_stream">Start Screen Stream</string>
+    <string name="screen_stream_active_badge">LIVE STREAMING</string>
 </resources>

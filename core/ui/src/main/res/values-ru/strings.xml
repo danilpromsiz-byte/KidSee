@@ -185,4 +185,37 @@
     <string name="enter_new_pin_desc">Задайте новый 4-значный PIN</string>
     <string name="direct_ip_probe_toast">Отправлен запрос на %1$s…</string>
     <string name="wifi_ip_badge">📡 Wi-Fi IP: %1$s</string>
+
+    <!-- Device Detail & Screen Mirroring -->
+    <string name="btn_back">Назад</string>
+    <string name="device_detail_default_name">Детское устройство</string>
+    <string name="screen_stream_ready">Готово к трансляции</string>
+    <string name="screen_stream_offline">Устройство не в сети</string>
+    <string name="screen_stream_not_active">Трансляция не запущена</string>
+    <string name="screen_stream_prompt_desc">Включите трансляцию на детском устройстве для живого просмотра</string>
+    <string name="btn_request_stream">Запросить трансляцию</string>
+    <string name="status_video_playing">▶ Воспроизводится видео: %1$s</string>
+    <string name="audio_muted">Звук выключен</string>
+    <string name="audio_on">Звук включен</string>
+    <string name="btn_hear_sound">Включить звук</string>
+    <string name="btn_mute_sound">Выключить звук</string>
+    <string name="btn_hold_to_talk">Удерживайте для связи</string>
+    <string name="status_speaking">Говорите…</string>
+    <string name="media_controls_title">Управление видео и медиа</string>
+    <string name="btn_prev">Предыдущее</string>
+    <string name="btn_pause">Пауза</string>
+    <string name="btn_play">Воспроизвести</string>
+    <string name="btn_next">Следующее</string>
+    <string name="device_locked_title">Устройство заблокировано</string>
+    <string name="device_locked_desc">Нажмите, чтобы разблокировать экран ребенка</string>
+    <string name="block_screen_now_title">Заблокировать экран сейчас</string>
+    <string name="block_screen_now_desc">Мгновенно блокирует доступ и включает перерыв</string>
+    <string name="btn_unlock">Разблокировать</string>
+    <string name="btn_lock">Заблокировать</string>
+    <string name="screen_mirror_content_desc">Трансляция экрана ребенка</string>
+    <string name="screen_stream_started_toast">Трансляция экрана запущена</string>
+    <string name="perm_screen_capture">Трансляция экрана</string>
+    <string name="perm_screen_capture_desc">Позволяет родителям видеть происходящее на экране в реальном времени</string>
+    <string name="btn_enable_screen_stream">Включить трансляцию экрана</string>
+    <string name="screen_stream_active_badge">ПРЯМОЙ ЭФИР</string>
 </resources>

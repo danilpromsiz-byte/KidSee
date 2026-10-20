@@ -54,7 +54,7 @@ class LanDiscoveryManager(
 ) {
     companion object {
         const val DISCOVERY_PORT = 42542
-        const val SERVICE_TYPE = "_kidsee._tcp."
+        const val SERVICE_TYPE = "_kidsee._tcp"
         private const val BROADCAST_IP = "255.255.255.255"
         private const val PREFIX_DEVICE = "KIDSEE_DEV:"
         private const val PREFIX_COMMAND = "KIDSEE_CMD:"
@@ -551,8 +551,8 @@ class LanDiscoveryManager(
     suspend fun fetchDeviceStatusViaHttp(ip: String, port: Int = DISCOVERY_PORT): ChildDevice? {
         return try {
             val s = Socket()
-            s.connect(InetSocketAddress(ip, port), 600)
-            s.soTimeout = 800
+            s.connect(InetSocketAddress(ip, port), 300)
+            s.soTimeout = 700
 
             val writer = OutputStreamWriter(s.getOutputStream(), Charsets.UTF_8)
             writer.write("GET /kidsee/status HTTP/1.1\r\nHost: $ip\r\nConnection: close\r\n\r\n")
@@ -623,15 +623,7 @@ class LanDiscoveryManager(
             for (chunk in chunks) {
                 val jobs = chunk.map { targetIp ->
                     scope.launch(Dispatchers.IO) {
-                        // Fast socket connect check (220ms timeout)
-                        try {
-                            val socket = Socket()
-                            socket.connect(InetSocketAddress(targetIp, DISCOVERY_PORT), 220)
-                            socket.close()
-
-                            // If port 42542 is open, fetch full status
-                            fetchDeviceStatusViaHttp(targetIp, DISCOVERY_PORT)
-                        } catch (_: Exception) {}
+                        fetchDeviceStatusViaHttp(targetIp, DISCOVERY_PORT)
                     }
                 }
                 jobs.forEach { it.join() }
@@ -902,22 +894,25 @@ class LanDiscoveryManager(
         try {
             val interfaces = java.net.NetworkInterface.getNetworkInterfaces() ?: return emptyList()
             while (interfaces.hasMoreElements()) {
-                val iface = interfaces.nextElement()
-                if (iface.isLoopback || !iface.isUp) continue
-                val name = iface.name.lowercase()
-                if (name.startsWith("rmnet") || name.startsWith("ccmni") || name.startsWith("pdp") ||
-                    name.startsWith("dummy") || name.startsWith("tun") || name.startsWith("wwan") ||
-                    name.startsWith("cellular") || name.startsWith("ppp")) {
-                    continue
-                }
-                for (addr in iface.inetAddresses) {
-                    if (addr is java.net.Inet4Address && !addr.isLoopbackAddress) {
-                        val host = addr.hostAddress ?: continue
-                        if (!host.startsWith("127.")) {
-                            result.add(host)
-                        }
+                try {
+                    val iface = interfaces.nextElement()
+                    val name = iface.name.lowercase()
+                    if (name.startsWith("rmnet") || name.startsWith("ccmni") || name.startsWith("pdp") ||
+                        name.startsWith("dummy") || name.startsWith("tun") || name.startsWith("wwan") ||
+                        name.startsWith("cellular") || name.startsWith("ppp")) {
+                        continue
                     }
-                }
+                    for (addr in iface.inetAddresses) {
+                        try {
+                            if (addr is java.net.Inet4Address && !addr.isLoopbackAddress) {
+                                val host = addr.hostAddress ?: continue
+                                if (!host.startsWith("127.") && !host.startsWith("169.254.")) {
+                                    result.add(host)
+                                }
+                            }
+                        } catch (_: Exception) {}
+                    }
+                } catch (_: Exception) {}
             }
         } catch (e: Exception) {
             Timber.w(e, "Error getting local Wi-Fi IP addresses")

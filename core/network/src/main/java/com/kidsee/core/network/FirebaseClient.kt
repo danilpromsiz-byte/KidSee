@@ -43,6 +43,7 @@ class FirebaseClient(
     }
 
     fun observeFamilyDevices(familyId: String): Flow<List<ChildDevice>> = callbackFlow {
+        trySend(emptyList())
         val db = database
         if (db == null) {
             awaitClose {}
@@ -67,6 +68,7 @@ class FirebaseClient(
     }
 
     fun observeSingleDevice(familyId: String, deviceId: String): Flow<ChildDevice?> = callbackFlow {
+        trySend(null)
         val db = database
         if (db == null) {
             awaitClose {}

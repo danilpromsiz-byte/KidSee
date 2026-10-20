@@ -161,21 +161,23 @@ fun ParentLockScreen(
                 ) {
                     for (key in row) {
                         Surface(
+                            onClick = {
+                                when (key) {
+                                    "C" -> {
+                                        enteredPin = ""
+                                        isError = false
+                                    }
+                                    "⌫" -> onBackspace()
+                                    else -> onDigitPress(key)
+                                }
+                            },
                             shape = CircleShape,
-                            color = WazeCardBg,
-                            shadowElevation = 2.dp,
+                            color = Color(0xFFF3F1EA),
+                            shadowElevation = 0.dp,
+                            tonalElevation = 0.dp,
                             modifier = Modifier
                                 .size(68.dp)
-                                .clickable {
-                                    when (key) {
-                                        "C" -> {
-                                            enteredPin = ""
-                                            isError = false
-                                        }
-                                        "⌫" -> onBackspace()
-                                        else -> onDigitPress(key)
-                                    }
-                                }
+                                .clip(CircleShape)
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 if (key == "⌫") {

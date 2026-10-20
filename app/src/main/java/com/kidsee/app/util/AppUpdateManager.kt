@@ -35,6 +35,22 @@ class AppUpdateManager(
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
+    private var pendingInstallApk: File? = null
+
+    fun resetUpdateState() {
+        _updateState.value = UpdateState.Idle
+    }
+
+    fun checkPendingInstall() {
+        val apk = pendingInstallApk
+        if (apk != null && apk.exists()) {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || context.packageManager.canRequestPackageInstalls()) {
+                pendingInstallApk = null
+                installApk(apk)
+            }
+        }
+    }
+
     fun getCurrentVersionName(): String {
         return try {
             val pInfo = context.packageManager.getPackageInfo(context.packageName, 0)
@@ -106,6 +122,7 @@ class AppUpdateManager(
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 if (!context.packageManager.canRequestPackageInstalls()) {
+                    pendingInstallApk = apkFile
                     val settingsIntent = Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
                         data = Uri.parse("package:${context.packageName}")
                         addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -114,6 +131,7 @@ class AppUpdateManager(
                     return
                 }
             }
+            pendingInstallApk = null
 
             val apkUri = FileProvider.getUriForFile(
                 context,

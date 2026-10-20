@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onStart
 
 class KidSeeRepository(
     private val preferences: KidSeePreferences,
@@ -62,7 +63,7 @@ class KidSeeRepository(
 
     fun observeFamilyDevices(familyId: String): Flow<List<ChildDevice>> {
         val lanFlow = lanDiscoveryManager?.discoveredDevicesFlow ?: flowOf(emptyList())
-        val fbFlow = firebaseClient.observeFamilyDevices(familyId)
+        val fbFlow = firebaseClient.observeFamilyDevices(familyId).onStart { emit(emptyList()) }
 
         return combine(lanFlow, fbFlow) { lanList, fbList ->
             val map = LinkedHashMap<String, ChildDevice>()
@@ -80,7 +81,7 @@ class KidSeeRepository(
 
     fun observeSingleDevice(familyId: String, deviceId: String): Flow<ChildDevice?> {
         val lanFlow = lanDiscoveryManager?.discoveredDevicesFlow ?: flowOf(emptyList())
-        val fbFlow = firebaseClient.observeSingleDevice(familyId, deviceId)
+        val fbFlow = firebaseClient.observeSingleDevice(familyId, deviceId).onStart { emit(null) }
 
         return combine(lanFlow, fbFlow) { lanList, fbDevice ->
             val lanDevice = lanList.find { it.id == deviceId }

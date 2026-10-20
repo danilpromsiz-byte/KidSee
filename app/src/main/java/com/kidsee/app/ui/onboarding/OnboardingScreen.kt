@@ -816,22 +816,23 @@ private fun ParentCreatePinStep(
                 ) {
                     for (key in row) {
                         Surface(
+                            onClick = {
+                                when (key) {
+                                    "C" -> {
+                                        enteredPin = ""
+                                        isError = false
+                                    }
+                                    "⌫" -> onBackspace()
+                                    else -> onDigit(key)
+                                }
+                            },
                             shape = CircleShape,
-                            color = WazeCardBg,
-                            shadowElevation = 2.dp,
+                            color = Color(0xFFF3F1EA),
+                            shadowElevation = 0.dp,
+                            tonalElevation = 0.dp,
                             modifier = Modifier
                                 .size(68.dp)
                                 .clip(CircleShape)
-                                .clickable {
-                                    when (key) {
-                                        "C" -> {
-                                            enteredPin = ""
-                                            isError = false
-                                        }
-                                        "⌫" -> onBackspace()
-                                        else -> onDigit(key)
-                                    }
-                                }
                         ) {
                             Box(contentAlignment = Alignment.Center) {
                                 if (key == "⌫") {

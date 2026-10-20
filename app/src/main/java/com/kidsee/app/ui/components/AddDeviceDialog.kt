@@ -73,12 +73,10 @@ fun AddDeviceDialog(
     familyId: String,
     onUpdateFamilyId: (String) -> Unit,
     onRescan: () -> Unit,
-    onProbeIp: ((String) -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     var showEditDialog by remember { mutableStateOf(false) }
-    var manualIp by remember { mutableStateOf("") }
 
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val alphaAnim by infiniteTransition.animateFloat(
@@ -302,50 +300,6 @@ fun AddDeviceDialog(
                 }
 
                 Spacer(modifier = Modifier.height(18.dp))
-
-                // Direct IP connect card (fallback for strict routers / AP isolation)
-                Surface(
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color.White,
-                    border = androidx.compose.foundation.BorderStroke(1.dp, WazeBorder),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Text(
-                            text = stringResource(R.string.add_device_by_ip),
-                            style = KidSeeTypography.labelMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = WazeTextPrimary
-                            )
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            OutlinedTextField(
-                                value = manualIp,
-                                onValueChange = { manualIp = it.trim() },
-                                singleLine = true,
-                                placeholder = { Text(stringResource(R.string.ip_placeholder), fontSize = 13.sp) },
-                                modifier = Modifier.weight(1f)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            KidSeePillButton(
-                                text = stringResource(R.string.btn_find),
-                                onClick = {
-                                    if (manualIp.isNotBlank()) {
-                                        onProbeIp?.invoke(manualIp)
-                                        Toast.makeText(context, context.getString(R.string.direct_ip_probe_toast, manualIp), Toast.LENGTH_SHORT).show()
-                                    }
-                                },
-                                height = 48.dp
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
 
                 // Wi-Fi Discovery Status Badge
                 Surface(

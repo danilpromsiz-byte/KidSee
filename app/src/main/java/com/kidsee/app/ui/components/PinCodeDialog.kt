@@ -218,11 +218,14 @@ private fun KeypadButton(
     onClick: () -> Unit
 ) {
     Surface(
+        onClick = onClick,
         shape = CircleShape,
         color = Color(0xFFF3F1EA),
+        shadowElevation = 0.dp,
+        tonalElevation = 0.dp,
         modifier = Modifier
             .size(62.dp)
-            .clickable(onClick = onClick)
+            .clip(CircleShape)
     ) {
         Box(contentAlignment = Alignment.Center) {
             if (text == "⌫") {

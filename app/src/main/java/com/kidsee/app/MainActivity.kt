@@ -111,6 +111,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        appUpdateManager.checkPendingInstall()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         unregisterReceiver(pipReceiver)
@@ -162,7 +167,10 @@ class MainActivity : AppCompatActivity() {
             if (showUpdateDialog || updateState is UpdateState.UpdateAvailable || updateState is UpdateState.Downloading) {
                 UpdateDialog(
                     updateState = updateState,
-                    onDismiss = { showUpdateDialog = false },
+                    onDismiss = {
+                        showUpdateDialog = false
+                        appUpdateManager.resetUpdateState()
+                    },
                     onUpdateClick = { releaseInfo ->
                         scope.launch {
                             appUpdateManager.downloadAndInstall(releaseInfo)
@@ -183,9 +191,6 @@ class MainActivity : AppCompatActivity() {
                     onRescan = {
                         app.stateManager.lanDiscoveryManager.rescan()
                     },
-                    onProbeIp = { ip ->
-                        app.stateManager.lanDiscoveryManager.probeIp(ip)
-                    },
                     onDismiss = { showAddDeviceDialog = false }
                 )
             }
@@ -198,8 +203,13 @@ class MainActivity : AppCompatActivity() {
                     familyId = familyId,
                     currentLanguage = currentLanguage,
                     onCheckUpdate = {
-                        scope.launch {
-                            appUpdateManager.checkForUpdates(isManual = true)
+                        if (updateState is UpdateState.UpdateAvailable) {
+                            showSettingsDialog = false
+                            showUpdateDialog = true
+                        } else {
+                            scope.launch {
+                                appUpdateManager.checkForUpdates(isManual = true)
+                            }
                         }
                     },
                     onUpdateFamilyId = { newFamilyId ->
@@ -387,8 +397,12 @@ class MainActivity : AppCompatActivity() {
                                 Toast.makeText(this@MainActivity, localizedContext.getString(R.string.searching_wifi_network), Toast.LENGTH_SHORT).show()
                             },
                             onCheckUpdateClick = {
-                                scope.launch {
-                                    appUpdateManager.checkForUpdates(isManual = true)
+                                if (updateState is UpdateState.UpdateAvailable) {
+                                    showUpdateDialog = true
+                                } else {
+                                    scope.launch {
+                                        appUpdateManager.checkForUpdates(isManual = true)
+                                    }
                                 }
                             },
                             onLockClick = {

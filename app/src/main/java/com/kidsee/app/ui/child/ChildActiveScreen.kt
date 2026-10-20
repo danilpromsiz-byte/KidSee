@@ -21,6 +21,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kidsee.app.KidSeeApp
 import com.kidsee.core.ui.R
 import com.kidsee.core.domain.model.ChildDevice
 import com.kidsee.core.ui.components.KidSeeCard
@@ -93,6 +95,7 @@ fun ChildActiveScreen(
         Spacer(modifier = Modifier.height(28.dp))
 
         val isDefaultFamily = device?.familyId.isNullOrEmpty() || device?.familyId == "KID-7777"
+        val localIp = remember { KidSeeApp.instance.stateManager.lanDiscoveryManager.getPrimaryLocalIp() }
 
         Row(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -109,7 +112,11 @@ fun ChildActiveScreen(
                 color = if (isDefaultFamily) WazeOrangeLight else WazeBlue.copy(alpha = 0.12f)
             ) {
                 Text(
-                    text = if (isDefaultFamily) "📡 Готов к подключению" else "Код семьи: ${device?.familyId}",
+                    text = if (isDefaultFamily) {
+                        stringResource(R.string.child_ready_connect)
+                    } else {
+                        stringResource(R.string.family_code_desc, device?.familyId ?: "")
+                    },
                     style = KidSeeTypography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = if (isDefaultFamily) WazeOrange else WazeBlue
@@ -119,11 +126,28 @@ fun ChildActiveScreen(
             }
         }
 
+        if (localIp != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Surface(
+                shape = RoundedCornerShape(percent = 50),
+                color = Color(0xFFF1EFEA)
+            ) {
+                Text(
+                    text = stringResource(R.string.wifi_ip_badge, localIp),
+                    style = KidSeeTypography.labelSmall.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = WazeBlue
+                    ),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                )
+            }
+        }
+
         Spacer(modifier = Modifier.height(10.dp))
 
         if (isDefaultFamily) {
             Text(
-                text = "Откройте KidSee на устройстве родителя в этой же Wi-Fi сети для подключения",
+                text = stringResource(R.string.child_waiting_parent),
                 style = KidSeeTypography.bodySmall.copy(color = WazeTextSecondary),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(horizontal = 16.dp)
@@ -144,16 +168,16 @@ fun ChildActiveScreen(
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "Active Protections",
+                        text = stringResource(R.string.active_protections),
                         style = KidSeeTypography.titleMedium.copy(fontWeight = FontWeight.Bold)
                     )
                 }
 
                 Spacer(modifier = Modifier.height(14.dp))
 
-                ProtectionItem(title = "Safe Screen Monitoring")
-                ProtectionItem(title = "Bedtime & Study Schedules")
-                ProtectionItem(title = "Direct Parent Voice Notes")
+                ProtectionItem(title = stringResource(R.string.prot_screen_mon))
+                ProtectionItem(title = stringResource(R.string.prot_schedules))
+                ProtectionItem(title = stringResource(R.string.prot_voice_notes))
             }
         }
 

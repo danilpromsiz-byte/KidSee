@@ -52,9 +52,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kidsee.core.ui.R
 import com.kidsee.core.ui.components.KidSeeMascot
 import com.kidsee.core.ui.components.KidSeePillButton
 import com.kidsee.core.ui.theme.KidSeeTypography
@@ -71,10 +73,12 @@ fun AddDeviceDialog(
     familyId: String,
     onUpdateFamilyId: (String) -> Unit,
     onRescan: () -> Unit,
+    onProbeIp: ((String) -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
     var showEditDialog by remember { mutableStateOf(false) }
+    var manualIp by remember { mutableStateOf("") }
 
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val alphaAnim by infiniteTransition.animateFloat(
@@ -93,14 +97,14 @@ fun AddDeviceDialog(
             onDismissRequest = { showEditDialog = false },
             title = {
                 Text(
-                    text = "Код семьи",
+                    text = stringResource(R.string.family_code_title),
                     style = KidSeeTypography.titleLarge.copy(fontWeight = FontWeight.Bold)
                 )
             },
             text = {
                 Column {
                     Text(
-                        text = "Задайте ваш собственный код семьи. Этот же код должен быть указан на устройствах детей:",
+                        text = stringResource(R.string.add_device_family_desc),
                         style = KidSeeTypography.bodyMedium.copy(color = WazeTextSecondary)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -108,7 +112,7 @@ fun AddDeviceDialog(
                         value = tempCode,
                         onValueChange = { tempCode = it.trim().uppercase() },
                         singleLine = true,
-                        placeholder = { Text("Например: SEMYA-1 или 7777") },
+                        placeholder = { Text("SEMYA-1 / 7777") },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -118,15 +122,15 @@ fun AddDeviceDialog(
                     if (tempCode.isNotBlank()) {
                         onUpdateFamilyId(tempCode)
                         showEditDialog = false
-                        Toast.makeText(context, "Код семьи изменен: $tempCode", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.family_code_updated_toast, tempCode), Toast.LENGTH_SHORT).show()
                     }
                 }) {
-                    Text("Сохранить", fontWeight = FontWeight.Bold, color = WazeBlue)
+                    Text(stringResource(R.string.btn_save), fontWeight = FontWeight.Bold, color = WazeBlue)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEditDialog = false }) {
-                    Text("Отмена", color = WazeTextSecondary)
+                    Text(stringResource(R.string.btn_cancel), color = WazeTextSecondary)
                 }
             }
         )
@@ -170,14 +174,14 @@ fun AddDeviceDialog(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "Новое устройство",
+                                text = stringResource(R.string.add_device_title),
                                 style = KidSeeTypography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold,
                                     color = WazeTextPrimary
                                 )
                             )
                             Text(
-                                text = "Подключение ребенка",
+                                text = stringResource(R.string.add_device_subtitle),
                                 style = KidSeeTypography.labelSmall.copy(color = WazeTextSecondary)
                             )
                         }
@@ -214,7 +218,7 @@ fun AddDeviceDialog(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "КОД СЕМЬИ",
+                                text = stringResource(R.string.family_code_label),
                                 style = KidSeeTypography.labelSmall.copy(
                                     fontWeight = FontWeight.Bold,
                                     color = WazeTextSecondary,
@@ -260,7 +264,7 @@ fun AddDeviceDialog(
                                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                         val clip = ClipData.newPlainText("KidSee Family Code", familyId.ifEmpty { "KID-7777" })
                                         clipboard.setPrimaryClip(clip)
-                                        Toast.makeText(context, "Код семьи скопирован!", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, context.getString(R.string.code_copied_toast), Toast.LENGTH_SHORT).show()
                                     }
                             ) {
                                 Box(contentAlignment = Alignment.Center) {
@@ -285,19 +289,63 @@ fun AddDeviceDialog(
                 ) {
                     StepInstructionRow(
                         stepNum = "1",
-                        text = "Установите KidSee на телефон, планшет или ТВ ребёнка"
+                        text = stringResource(R.string.add_device_step1)
                     )
                     StepInstructionRow(
                         stepNum = "2",
-                        text = "Откройте приложение и выберите режим «Ребёнок»"
+                        text = stringResource(R.string.add_device_step2)
                     )
                     StepInstructionRow(
                         stepNum = "3",
-                        text = "Подключите оба устройства к одной сети Wi-Fi (или укажите одинаковый Код семьи)"
+                        text = stringResource(R.string.add_device_step3)
                     )
                 }
 
                 Spacer(modifier = Modifier.height(18.dp))
+
+                // Direct IP connect card (fallback for strict routers / AP isolation)
+                Surface(
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color.White,
+                    border = androidx.compose.foundation.BorderStroke(1.dp, WazeBorder),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Text(
+                            text = stringResource(R.string.add_device_by_ip),
+                            style = KidSeeTypography.labelMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = WazeTextPrimary
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = manualIp,
+                                onValueChange = { manualIp = it.trim() },
+                                singleLine = true,
+                                placeholder = { Text(stringResource(R.string.ip_placeholder), fontSize = 13.sp) },
+                                modifier = Modifier.weight(1f)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            KidSeePillButton(
+                                text = stringResource(R.string.btn_find),
+                                onClick = {
+                                    if (manualIp.isNotBlank()) {
+                                        onProbeIp?.invoke(manualIp)
+                                        Toast.makeText(context, context.getString(R.string.direct_ip_probe_toast, manualIp), Toast.LENGTH_SHORT).show()
+                                    }
+                                },
+                                height = 48.dp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
 
                 // Wi-Fi Discovery Status Badge
                 Surface(
@@ -319,7 +367,7 @@ fun AddDeviceDialog(
                         )
                         Spacer(modifier = Modifier.width(10.dp))
                         Text(
-                            text = "Поиск устройств в Wi-Fi сети активен...",
+                            text = stringResource(R.string.searching_wifi_network),
                             style = KidSeeTypography.bodyMedium.copy(
                                 fontWeight = FontWeight.SemiBold,
                                 color = WazeGreen,
@@ -333,10 +381,10 @@ fun AddDeviceDialog(
 
                 // Rescan Button
                 KidSeePillButton(
-                    text = "🔄 Повторить поиск в сети",
+                    text = stringResource(R.string.btn_rescan),
                     onClick = {
                         onRescan()
-                        Toast.makeText(context, "Идет поиск детских устройств...", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, context.getString(R.string.searching_wifi_network), Toast.LENGTH_SHORT).show()
                     },
                     backgroundColor = Color.White,
                     contentColor = WazeBlue,
@@ -346,7 +394,7 @@ fun AddDeviceDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 KidSeePillButton(
-                    text = "Готово",
+                    text = stringResource(R.string.btn_done),
                     onClick = onDismiss,
                     modifier = Modifier.fillMaxWidth()
                 )

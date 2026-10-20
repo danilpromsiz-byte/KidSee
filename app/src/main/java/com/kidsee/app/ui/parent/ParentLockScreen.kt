@@ -28,10 +28,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kidsee.core.ui.R
 import com.kidsee.core.ui.components.KidSeeMascot
 import com.kidsee.core.ui.theme.KidSeeTypography
 import com.kidsee.core.ui.theme.WazeBlue
@@ -95,7 +97,7 @@ fun ParentLockScreen(
             )
             Spacer(modifier = Modifier.size(8.dp))
             Text(
-                text = "Родительский контроль",
+                text = stringResource(R.string.parent_lock_title),
                 style = KidSeeTypography.headlineSmall.copy(
                     fontWeight = FontWeight.Bold,
                     color = WazeTextPrimary
@@ -106,7 +108,7 @@ fun ParentLockScreen(
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = if (isError) "Неверный PIN-код! Попробуйте снова." else "Введите PIN-код для доступа к управлению",
+            text = if (isError) stringResource(R.string.wrong_pin_error) else stringResource(R.string.enter_pin_to_access),
             style = KidSeeTypography.bodyMedium.copy(
                 color = if (isError) WazeRed else WazeTextSecondary,
                 fontSize = 14.sp

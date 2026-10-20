@@ -45,12 +45,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.os.LocaleListCompat
 import com.kidsee.app.util.AppUpdateManager
 import com.kidsee.app.util.UpdateState
+import com.kidsee.core.ui.R
 import com.kidsee.core.ui.components.KidSeeCard
 import com.kidsee.core.ui.components.KidSeePillButton
 import com.kidsee.core.ui.theme.KidSeeTypography
@@ -86,14 +88,14 @@ fun SettingsDialog(
             onDismissRequest = { showEditFamilyDialog = false },
             title = {
                 Text(
-                    text = "Код семьи",
+                    text = stringResource(R.string.family_code_title),
                     style = KidSeeTypography.titleLarge.copy(fontWeight = FontWeight.Bold)
                 )
             },
             text = {
                 Column {
                     Text(
-                        text = "Задайте общий код для синхронизации устройств:",
+                        text = stringResource(R.string.family_code_dialog_desc),
                         style = KidSeeTypography.bodyMedium.copy(color = WazeTextSecondary)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -101,7 +103,7 @@ fun SettingsDialog(
                         value = tempCode,
                         onValueChange = { tempCode = it.trim().uppercase() },
                         singleLine = true,
-                        placeholder = { Text("Например: SEMYA-1 или 7777") },
+                        placeholder = { Text("SEMYA-1 / 7777") },
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -113,12 +115,12 @@ fun SettingsDialog(
                         showEditFamilyDialog = false
                     }
                 }) {
-                    Text("Сохранить", fontWeight = FontWeight.Bold, color = WazeBlue)
+                    Text(stringResource(R.string.btn_save), fontWeight = FontWeight.Bold, color = WazeBlue)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEditFamilyDialog = false }) {
-                    Text("Отмена", color = WazeTextSecondary)
+                    Text(stringResource(R.string.btn_cancel), color = WazeTextSecondary)
                 }
             }
         )
@@ -170,7 +172,7 @@ fun SettingsDialog(
                         Spacer(modifier = Modifier.width(10.dp))
                         Column {
                             Text(
-                                text = "Настройки",
+                                text = stringResource(R.string.settings_title),
                                 style = KidSeeTypography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold,
                                     color = WazeTextPrimary
@@ -197,12 +199,12 @@ fun SettingsDialog(
                 // 1. Check for Updates Button
                 SettingsActionCard(
                     icon = Icons.Default.SystemUpdate,
-                    title = "Проверить обновления",
+                    title = stringResource(R.string.check_updates_title),
                     subtitle = when (updateState) {
-                        is UpdateState.Checking -> "Проверка сервера..."
-                        is UpdateState.UpdateAvailable -> "🔥 Доступна новая версия!"
-                        is UpdateState.UpToDate -> "Установлена актуальная версия"
-                        else -> "Поиск новой версии на GitHub"
+                        is UpdateState.Checking -> stringResource(R.string.update_checking)
+                        is UpdateState.UpdateAvailable -> stringResource(R.string.update_available_badge)
+                        is UpdateState.UpToDate -> stringResource(R.string.update_up_to_date)
+                        else -> stringResource(R.string.check_updates_desc)
                     },
                     iconTint = WazeBlue,
                     trailing = {
@@ -222,8 +224,8 @@ fun SettingsDialog(
                 // 2. Change Parent PIN
                 SettingsActionCard(
                     icon = Icons.Default.Password,
-                    title = "PIN-код родителя",
-                    subtitle = "Защита настроек и режима от детей",
+                    title = stringResource(R.string.parent_pin_title),
+                    subtitle = stringResource(R.string.parent_pin_desc),
                     iconTint = WazeGreen,
                     onClick = onChangePin
                 )
@@ -233,8 +235,8 @@ fun SettingsDialog(
                 // 3. Family Code
                 SettingsActionCard(
                     icon = Icons.Default.Group,
-                    title = "Код семьи",
-                    subtitle = "Текущий код: $familyId (нажмите для изменения)",
+                    title = stringResource(R.string.family_code_title),
+                    subtitle = stringResource(R.string.family_code_desc, familyId),
                     iconTint = WazeBlue,
                     onClick = { showEditFamilyDialog = true }
                 )
@@ -244,8 +246,8 @@ fun SettingsDialog(
                 // 4. Switch Role (Parent <-> Child)
                 SettingsActionCard(
                     icon = Icons.Default.SwapHoriz,
-                    title = "Сменить режим",
-                    subtitle = "Переключить между Родителем и Ребенком",
+                    title = stringResource(R.string.switch_role_title),
+                    subtitle = stringResource(R.string.switch_role_desc),
                     iconTint = Color(0xFFFF9800),
                     onClick = onSwitchRole
                 )
@@ -254,7 +256,7 @@ fun SettingsDialog(
 
                 // 5. Language Selector
                 Text(
-                    text = "Язык приложения",
+                    text = stringResource(R.string.app_language_title),
                     style = KidSeeTypography.labelMedium.copy(
                         fontWeight = FontWeight.Bold,
                         color = WazeTextSecondary

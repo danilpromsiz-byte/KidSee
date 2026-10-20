@@ -101,4 +101,88 @@
     <string name="btn_save">Зберегти</string>
     <string name="btn_delete">Видалити</string>
     <string name="btn_cancel">Скасувати</string>
+
+    <!-- Age Verification -->
+    <string name="age_verify_title">Перевірка віку батьків</string>
+    <string name="age_verify_subtitle">Вкажіть ваш рік народження. Режим батьківського контролю доступний лише повнолітнім (18+).</string>
+    <string name="birth_year_label">РІК НАРОДЖЕННЯ</string>
+    <string name="age_verified_badge">Вік підтверджено (%1$d років)</string>
+    <string name="age_verified_desc">Ви можете створити пароль і профіль батьків</string>
+    <string name="age_restricted_title">Вам %1$d років — доступ обмежено</string>
+    <string name="age_restricted_desc">Режим батьків призначений виключно для повнолітніх (18+). Для цього пристрою оберіть режим дитини.</string>
+    <string name="btn_setup_as_child">Налаштувати як Дитина</string>
+
+    <!-- PIN Setup & Verification -->
+    <string name="create_pin_title">Створіть PIN-код</string>
+    <string name="confirm_pin_title">Підтвердьте PIN-код</string>
+    <string name="create_pin_desc">Вкажіть ваш 4-значний PIN-код для захисту налаштувань від дітей</string>
+    <string name="confirm_pin_desc">Введіть ті самі 4 цифри для підтвердження</string>
+    <string name="pin_mismatch_error">PIN-коди не збігаються! Спробуйте знову.</string>
+    <string name="enter_parent_pin_title">Введіть PIN-код батьків</string>
+    <string name="enter_parent_pin_desc">Захист налаштувань від дітей</string>
+    <string name="wrong_pin_error">Невірний PIN-код, спробуйте ще раз</string>
+    <string name="parent_lock_title">Батьківський контроль</string>
+    <string name="enter_pin_to_access">Введіть PIN-код для доступу до керування</string>
+
+    <!-- Settings Dialog -->
+    <string name="settings_title">Налаштування</string>
+    <string name="check_updates_title">Перевірити оновлення</string>
+    <string name="check_updates_desc">Пошук нової версії на GitHub</string>
+    <string name="update_checking">Перевірка сервера…</string>
+    <string name="update_available_badge">🔥 Доступна нова версія!</string>
+    <string name="update_up_to_date">Встановлена найновіша версія</string>
+    <string name="parent_pin_title">PIN-код батьків</string>
+    <string name="parent_pin_desc">Захист налаштувань та режиму від дітей</string>
+    <string name="family_code_title">Код сім\'ї</string>
+    <string name="family_code_desc">Поточний код: %1$s (натисніть для зміни)</string>
+    <string name="switch_role_title">Змінити режим</string>
+    <string name="switch_role_desc">Перемкнути між Батьками та Дитиною</string>
+    <string name="app_language_title">Мова додатка</string>
+    <string name="family_code_dialog_desc">Вкажіть спільний код для синхронізації пристроїв:</string>
+
+    <!-- Add Device Dialog -->
+    <string name="add_device_title">Підключення дитини</string>
+    <string name="add_device_subtitle">Новий пристрій</string>
+    <string name="add_device_family_desc">Вкажіть власний код сім\'ї. Цей самий код має бути зазначений на пристроях дітей:</string>
+    <string name="code_copied_toast">Код сім\'ї скопійовано!</string>
+    <string name="add_device_step1">1. Встановіть KidSee на телефон, планшет або ТВ дитини</string>
+    <string name="add_device_step2">2. Відкрийте додаток та оберіть «Дитина»</string>
+    <string name="add_device_step3">3. Підключіть обидва пристрої до однієї мережі Wi-Fi (або вкажіть однаковий Код сім\'ї)</string>
+    <string name="add_device_by_ip">Або підключити напряму за IP-адресою:</string>
+    <string name="ip_placeholder">Наприклад: 192.168.1.45</string>
+    <string name="btn_find">Знайти</string>
+    <string name="rescan_wifi_devices">Пошук пристроїв у Wi-Fi</string>
+    <string name="searching_wifi_network">Сканування Wi-Fi мережі…</string>
+    <string name="btn_rescan">Повторити пошук у Wi-Fi</string>
+    <string name="btn_done">Готово</string>
+
+    <!-- LAN / Wi-Fi Pairing -->
+    <string name="link_to_family">+ Прив\'язати до сім\'ї</string>
+    <string name="found_on_wifi">📡 Знайдено у Wi-Fi</string>
+    <string name="child_ready_connect">📡 Готовий до підключення</string>
+    <string name="child_waiting_parent">Відкрийте KidSee на телефоні батьків у цій же мережі Wi-Fi для підключення</string>
+    <string name="active_protections">Активний захист</string>
+    <string name="prot_screen_mon">Безпечний моніторинг екрана</string>
+    <string name="prot_schedules">Розклад сну та навчання</string>
+    <string name="prot_voice_notes">Голосовий зв\'язок з батьками</string>
+    <string name="connect_another_device">+ Підключити ще пристрій</string>
+    <string name="device_linked_toast">Пристрій %1$s прив\'язано до вашої сім\'ї!</string>
+
+    <!-- Update Dialog -->
+    <string name="update_available_title">Доступне оновлення</string>
+    <string name="btn_update_now">Оновити зараз</string>
+    <string name="btn_later">Пізніше</string>
+    <string name="downloading_progress">Завантаження: %1$d%%</string>
+
+    <!-- Additional UI Keys -->
+    <string name="select_language_desc">Мова інтерфейсу додатка</string>
+    <string name="family_code_label">КОД СІМ\'Ї</string>
+    <string name="family_code_updated_toast">Код сім\'ї змінено: %1$s</string>
+    <string name="pin_updated_toast">PIN-код успішно змінено!</string>
+    <string name="enter_current_pin_title">Введіть поточний PIN</string>
+    <string name="enter_current_pin_desc">Підтвердьте поточний PIN-код</string>
+    <string name="enter_new_pin_title">Введіть новий PIN-код</string>
+    <string name="enter_new_pin_desc">Задайте новий 4-значний PIN</string>
+    <string name="direct_ip_probe_toast">Надіслано запит на %1$s…</string>
+    <string name="wifi_ip_badge">📡 Wi-Fi IP: %1$s</string>
 </resources>

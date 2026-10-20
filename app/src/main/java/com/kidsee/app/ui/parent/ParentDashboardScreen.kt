@@ -201,7 +201,7 @@ fun ParentDashboardScreen(
                     item {
                         Spacer(modifier = Modifier.height(8.dp))
                         KidSeePillButton(
-                            text = "+ Подключить еще устройство",
+                            text = stringResource(R.string.connect_another_device),
                             onClick = onAddDeviceClick,
                             backgroundColor = Color.White,
                             contentColor = WazeBlue,
@@ -313,7 +313,7 @@ private fun DeviceCardContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "📡 Обнаружено в Wi-Fi",
+                    text = stringResource(R.string.found_on_wifi),
                     style = KidSeeTypography.labelSmall.copy(
                         fontWeight = FontWeight.Bold,
                         color = WazeOrange
@@ -325,7 +325,7 @@ private fun DeviceCardContent(
                         modifier = Modifier.height(30.dp)
                     ) {
                         Text(
-                            text = "+ Привязать к семье",
+                            text = stringResource(R.string.link_to_family),
                             style = KidSeeTypography.labelSmall.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = WazeBlue
@@ -439,7 +439,7 @@ private fun EmptyDevicesView(
             )
             Spacer(modifier = Modifier.width(6.dp))
             Text(
-                text = "Повторить поиск в Wi-Fi",
+                text = stringResource(R.string.btn_rescan),
                 style = KidSeeTypography.bodyMedium.copy(
                     fontWeight = FontWeight.Bold,
                     color = WazeBlue

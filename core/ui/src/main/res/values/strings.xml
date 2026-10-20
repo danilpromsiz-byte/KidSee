@@ -101,4 +101,88 @@
     <string name="btn_save">Save</string>
     <string name="btn_delete">Delete</string>
     <string name="btn_cancel">Cancel</string>
+
+    <!-- Age Verification -->
+    <string name="age_verify_title">Parent Age Verification</string>
+    <string name="age_verify_subtitle">Enter your birth year. Parental control mode is for adults only (18+).</string>
+    <string name="birth_year_label">BIRTH YEAR</string>
+    <string name="age_verified_badge">Age confirmed (%1$d years old)</string>
+    <string name="age_verified_desc">You can create a parent PIN and profile</string>
+    <string name="age_restricted_title">You are %1$d years old — restricted</string>
+    <string name="age_restricted_desc">Parent mode is strictly for adults (18+). Choose Child mode for this device.</string>
+    <string name="btn_setup_as_child">Set up as Child</string>
+
+    <!-- PIN Setup & Verification -->
+    <string name="create_pin_title">Create Parent PIN</string>
+    <string name="confirm_pin_title">Confirm Parent PIN</string>
+    <string name="create_pin_desc">Set your 4-digit PIN to protect settings from children</string>
+    <string name="confirm_pin_desc">Re-enter the same 4 digits to confirm</string>
+    <string name="pin_mismatch_error">PINs do not match! Try again.</string>
+    <string name="enter_parent_pin_title">Enter Parent PIN</string>
+    <string name="enter_parent_pin_desc">Settings protected from children</string>
+    <string name="wrong_pin_error">Incorrect PIN, try again</string>
+    <string name="parent_lock_title">Parental Control</string>
+    <string name="enter_pin_to_access">Enter PIN code to access controls</string>
+
+    <!-- Settings Dialog -->
+    <string name="settings_title">Settings</string>
+    <string name="check_updates_title">Check for Updates</string>
+    <string name="check_updates_desc">Check GitHub for latest release</string>
+    <string name="update_checking">Checking server…</string>
+    <string name="update_available_badge">🔥 New version available!</string>
+    <string name="update_up_to_date">Latest version installed</string>
+    <string name="parent_pin_title">Parent PIN Code</string>
+    <string name="parent_pin_desc">Protect controls and settings from children</string>
+    <string name="family_code_title">Family Code</string>
+    <string name="family_code_desc">Current code: %1$s (tap to edit)</string>
+    <string name="switch_role_title">Switch Mode</string>
+    <string name="switch_role_desc">Toggle between Parent and Child</string>
+    <string name="app_language_title">Application Language</string>
+    <string name="family_code_dialog_desc">Set a common family code to sync devices:</string>
+
+    <!-- Add Device Dialog -->
+    <string name="add_device_title">Connect Child Device</string>
+    <string name="add_device_subtitle">Pairing child device</string>
+    <string name="add_device_family_desc">Set your own family code. Use the same code on your child\'s device:</string>
+    <string name="code_copied_toast">Family code copied!</string>
+    <string name="add_device_step1">1. Install KidSee on your child\'s phone, tablet, or TV</string>
+    <string name="add_device_step2">2. Open the app and select Child mode</string>
+    <string name="add_device_step3">3. Connect both devices to the same Wi-Fi network (or set matching Family Code)</string>
+    <string name="add_device_by_ip">Or connect directly by IP address:</string>
+    <string name="ip_placeholder">e.g. 192.168.1.45</string>
+    <string name="btn_find">Find</string>
+    <string name="rescan_wifi_devices">Search Wi-Fi Devices</string>
+    <string name="searching_wifi_network">Scanning Wi-Fi network…</string>
+    <string name="btn_rescan">Repeat Wi-Fi Scan</string>
+    <string name="btn_done">Done</string>
+
+    <!-- LAN / Wi-Fi Pairing -->
+    <string name="link_to_family">+ Link to Family</string>
+    <string name="found_on_wifi">📡 Found on Wi-Fi</string>
+    <string name="child_ready_connect">📡 Ready to Connect</string>
+    <string name="child_waiting_parent">Open KidSee on parent\'s device on this Wi-Fi network to connect</string>
+    <string name="active_protections">Active Protections</string>
+    <string name="prot_screen_mon">Safe Screen Monitoring</string>
+    <string name="prot_schedules">Bedtime &amp; Study Schedules</string>
+    <string name="prot_voice_notes">Direct Parent Voice Notes</string>
+    <string name="connect_another_device">+ Connect another device</string>
+    <string name="device_linked_toast">Device %1$s linked to your family!</string>
+
+    <!-- Update Dialog -->
+    <string name="update_available_title">Update Available</string>
+    <string name="btn_update_now">Update Now</string>
+    <string name="btn_later">Later</string>
+    <string name="downloading_progress">Downloading: %1$d%%</string>
+
+    <!-- Additional UI Keys -->
+    <string name="select_language_desc">Application interface language</string>
+    <string name="family_code_label">FAMILY CODE</string>
+    <string name="family_code_updated_toast">Family code updated: %1$s</string>
+    <string name="pin_updated_toast">PIN code successfully updated!</string>
+    <string name="enter_current_pin_title">Enter Current PIN</string>
+    <string name="enter_current_pin_desc">Confirm your current PIN code</string>
+    <string name="enter_new_pin_title">Enter New PIN</string>
+    <string name="enter_new_pin_desc">Set a new 4-digit PIN</string>
+    <string name="direct_ip_probe_toast">Probing device at %1$s…</string>
+    <string name="wifi_ip_badge">📡 Wi-Fi IP: %1$s</string>
 </resources>

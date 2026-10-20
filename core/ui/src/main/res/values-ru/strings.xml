@@ -101,4 +101,88 @@
     <string name="btn_save">Сохранить</string>
     <string name="btn_delete">Удалить</string>
     <string name="btn_cancel">Отмена</string>
+
+    <!-- Age Verification -->
+    <string name="age_verify_title">Проверка возраста родителя</string>
+    <string name="age_verify_subtitle">Укажите ваш год рождения. Режим родительского контроля доступен только совершеннолетним пользователям (18+).</string>
+    <string name="birth_year_label">ГОД РОЖДЕНИЯ</string>
+    <string name="age_verified_badge">Возраст подтверждён (%1$d лет)</string>
+    <string name="age_verified_desc">Вы можете создать пароль и профиль родителя</string>
+    <string name="age_restricted_title">Вам %1$d лет — доступ ограничен</string>
+    <string name="age_restricted_desc">Режим родителя предназначен исключительно для совершеннолетних (18+). Для этого устройства выберите режим ребёнка.</string>
+    <string name="btn_setup_as_child">Настроить как Ребёнок</string>
+
+    <!-- PIN Setup & Verification -->
+    <string name="create_pin_title">Придумайте PIN-код</string>
+    <string name="confirm_pin_title">Подтвердите PIN-код</string>
+    <string name="create_pin_desc">Задайте ваш 4-значный PIN-код для защиты настроек от детей</string>
+    <string name="confirm_pin_desc">Введите те же 4 цифры повторно для подтверждения</string>
+    <string name="pin_mismatch_error">PIN-коды не совпали! Попробуйте снова.</string>
+    <string name="enter_parent_pin_title">Введите PIN-код родителя</string>
+    <string name="enter_parent_pin_desc">Защита настроек от детей</string>
+    <string name="wrong_pin_error">Неверный PIN-код, попробуйте снова</string>
+    <string name="parent_lock_title">Родительский контроль</string>
+    <string name="enter_pin_to_access">Введите PIN-код для доступа к управлению</string>
+
+    <!-- Settings Dialog -->
+    <string name="settings_title">Настройки</string>
+    <string name="check_updates_title">Проверить обновления</string>
+    <string name="check_updates_desc">Поиск новой версии на GitHub</string>
+    <string name="update_checking">Проверка сервера…</string>
+    <string name="update_available_badge">🔥 Доступна новая версия!</string>
+    <string name="update_up_to_date">Установлена актуальная версия</string>
+    <string name="parent_pin_title">PIN-код родителя</string>
+    <string name="parent_pin_desc">Защита настроек и режима от детей</string>
+    <string name="family_code_title">Код семьи</string>
+    <string name="family_code_desc">Текущий код: %1$s (нажмите для изменения)</string>
+    <string name="switch_role_title">Сменить режим</string>
+    <string name="switch_role_desc">Переключить между Родителем и Ребенком</string>
+    <string name="app_language_title">Язык приложения</string>
+    <string name="family_code_dialog_desc">Задайте общий код для синхронизации устройств:</string>
+
+    <!-- Add Device Dialog -->
+    <string name="add_device_title">Подключение ребенка</string>
+    <string name="add_device_subtitle">Новое устройство</string>
+    <string name="add_device_family_desc">Задайте ваш собственный код семьи. Этот же код должен быть указан на устройствах детей:</string>
+    <string name="code_copied_toast">Код семьи скопирован!</string>
+    <string name="add_device_step1">1. Установите KidSee на телефон, планшет или ТВ ребёнка</string>
+    <string name="add_device_step2">2. Откройте приложение и выберите режим «Ребёнок»</string>
+    <string name="add_device_step3">3. Подключите оба устройства к одной сети Wi-Fi (или укажите одинаковый Код семьи)</string>
+    <string name="add_device_by_ip">Или подключить напрямую по IP-адресу:</string>
+    <string name="ip_placeholder">Например: 192.168.1.45</string>
+    <string name="btn_find">Найти</string>
+    <string name="rescan_wifi_devices">Поиск устройств в Wi-Fi</string>
+    <string name="searching_wifi_network">Поиск устройств в Wi-Fi сети…</string>
+    <string name="btn_rescan">Повторить поиск в Wi-Fi</string>
+    <string name="btn_done">Готово</string>
+
+    <!-- LAN / Wi-Fi Pairing -->
+    <string name="link_to_family">+ Привязать к семье</string>
+    <string name="found_on_wifi">📡 Обнаружено в Wi-Fi</string>
+    <string name="child_ready_connect">📡 Готов к подключению</string>
+    <string name="child_waiting_parent">Откройте KidSee на телефоне родителя в этой же Wi-Fi сети для подключения</string>
+    <string name="active_protections">Активная защита</string>
+    <string name="prot_screen_mon">Безопасный мониторинг экрана</string>
+    <string name="prot_schedules">Расписание сна и учёбы</string>
+    <string name="prot_voice_notes">Голосовая связь с родителями</string>
+    <string name="connect_another_device">+ Подключить еще устройство</string>
+    <string name="device_linked_toast">Устройство %1$s привязано к вашей семье!</string>
+
+    <!-- Update Dialog -->
+    <string name="update_available_title">Доступно обновление</string>
+    <string name="btn_update_now">Обновить сейчас</string>
+    <string name="btn_later">Позже</string>
+    <string name="downloading_progress">Загрузка: %1$d%%</string>
+
+    <!-- Additional UI Keys -->
+    <string name="select_language_desc">Язык интерфейса приложения</string>
+    <string name="family_code_label">КОД СЕМЬИ</string>
+    <string name="family_code_updated_toast">Код семьи изменен: %1$s</string>
+    <string name="pin_updated_toast">PIN-код успешно изменен!</string>
+    <string name="enter_current_pin_title">Введите текущий PIN</string>
+    <string name="enter_current_pin_desc">Подтвердите текущий PIN-код</string>
+    <string name="enter_new_pin_title">Введите новый PIN-код</string>
+    <string name="enter_new_pin_desc">Задайте новый 4-значный PIN</string>
+    <string name="direct_ip_probe_toast">Отправлен запрос на %1$s…</string>
+    <string name="wifi_ip_badge">📡 Wi-Fi IP: %1$s</string>
 </resources>

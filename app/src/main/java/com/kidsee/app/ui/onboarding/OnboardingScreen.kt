@@ -83,7 +83,7 @@ fun OnboardingScreen(
     onParentRegistered: (pin: String) -> Unit
 ) {
     var step by remember { mutableStateOf(OnboardingStep.LANGUAGE) }
-    var selectedLang by remember { mutableStateOf(currentLanguage) }
+    var selectedLang by remember(currentLanguage) { mutableStateOf(currentLanguage) }
     var selectedRole by remember { mutableStateOf<UserRole?>(null) }
 
     AnimatedContent(
@@ -468,7 +468,7 @@ private fun ParentAgeVerificationStep(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = "Проверка возраста родителя",
+            text = stringResource(R.string.age_verify_title),
             style = KidSeeTypography.headlineSmall.copy(
                 fontWeight = FontWeight.Bold,
                 color = WazeTextPrimary
@@ -479,7 +479,7 @@ private fun ParentAgeVerificationStep(
         Spacer(modifier = Modifier.height(8.dp))
 
         Text(
-            text = "Укажите ваш год рождения. Режим родительского контроля доступен только совершеннолетним пользователям (18+).",
+            text = stringResource(R.string.age_verify_subtitle),
             style = KidSeeTypography.bodyMedium.copy(color = WazeTextSecondary),
             textAlign = TextAlign.Center
         )
@@ -501,7 +501,7 @@ private fun ParentAgeVerificationStep(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "ГОД РОЖДЕНИЯ",
+                    text = stringResource(R.string.birth_year_label),
                     style = KidSeeTypography.labelSmall.copy(
                         fontWeight = FontWeight.Bold,
                         color = WazeTextSecondary,
@@ -521,7 +521,7 @@ private fun ParentAgeVerificationStep(
                             .size(46.dp)
                             .background(Color(0xFFF1EFEA), CircleShape)
                     ) {
-                        Icon(imageVector = Icons.Default.Remove, contentDescription = "-1 год", tint = WazeTextPrimary)
+                        Icon(imageVector = Icons.Default.Remove, contentDescription = "-1", tint = WazeTextPrimary)
                     }
 
                     Spacer(modifier = Modifier.width(16.dp))
@@ -543,7 +543,7 @@ private fun ParentAgeVerificationStep(
                             .size(46.dp)
                             .background(Color(0xFFF1EFEA), CircleShape)
                     ) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = "+1 год", tint = WazeTextPrimary)
+                        Icon(imageVector = Icons.Default.Add, contentDescription = "+1", tint = WazeTextPrimary)
                     }
                 }
 
@@ -599,14 +599,14 @@ private fun ParentAgeVerificationStep(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = "Возраст подтверждён ($calculatedAge лет)",
+                            text = stringResource(R.string.age_verified_badge, calculatedAge),
                             style = KidSeeTypography.titleSmall.copy(
                                 fontWeight = FontWeight.Bold,
                                 color = WazeGreen
                             )
                         )
                         Text(
-                            text = "Вы можете создать пароль и профиль родителя",
+                            text = stringResource(R.string.age_verified_desc),
                             style = KidSeeTypography.bodySmall.copy(color = WazeTextSecondary)
                         )
                     }
@@ -616,7 +616,7 @@ private fun ParentAgeVerificationStep(
             Spacer(modifier = Modifier.height(28.dp))
 
             KidSeePillButton(
-                text = "Продолжить",
+                text = stringResource(R.string.btn_continue),
                 onClick = onVerifiedAdult,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -628,7 +628,7 @@ private fun ParentAgeVerificationStep(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Вам $calculatedAge лет — доступ ограничен",
+                        text = stringResource(R.string.age_restricted_title, calculatedAge),
                         style = KidSeeTypography.titleSmall.copy(
                             fontWeight = FontWeight.Bold,
                             color = WazeRed
@@ -636,7 +636,7 @@ private fun ParentAgeVerificationStep(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Режим родителя предназначен исключительно для совершеннолетних (18+). Для этого устройства выберите режим ребёнка.",
+                        text = stringResource(R.string.age_restricted_desc),
                         style = KidSeeTypography.bodySmall.copy(color = WazeTextPrimary)
                     )
                 }
@@ -645,7 +645,7 @@ private fun ParentAgeVerificationStep(
             Spacer(modifier = Modifier.height(24.dp))
 
             KidSeePillButton(
-                text = "Настроить как Ребёнок",
+                text = stringResource(R.string.btn_setup_as_child),
                 onClick = onRedirectToChild,
                 backgroundColor = WazeTeal,
                 modifier = Modifier.fillMaxWidth()
@@ -746,7 +746,7 @@ private fun ParentCreatePinStep(
         Spacer(modifier = Modifier.height(16.dp))
 
         Text(
-            text = if (!isConfirming) "Придумайте PIN-код" else "Подтвердите PIN-код",
+            text = if (!isConfirming) stringResource(R.string.create_pin_title) else stringResource(R.string.confirm_pin_title),
             style = KidSeeTypography.headlineSmall.copy(
                 fontWeight = FontWeight.Bold,
                 color = WazeTextPrimary
@@ -758,11 +758,11 @@ private fun ParentCreatePinStep(
 
         Text(
             text = if (isError) {
-                "PIN-коды не совпали! Придумайте PIN заново."
+                stringResource(R.string.pin_mismatch_error)
             } else if (!isConfirming) {
-                "Задайте ваш собственный 4-значный PIN-код для защиты настроек от детей"
+                stringResource(R.string.create_pin_desc)
             } else {
-                "Введите те же 4 цифры повторно для подтверждения"
+                stringResource(R.string.confirm_pin_desc)
             },
             style = KidSeeTypography.bodyMedium.copy(
                 color = if (isError) WazeRed else WazeTextSecondary,
@@ -821,6 +821,7 @@ private fun ParentCreatePinStep(
                             shadowElevation = 2.dp,
                             modifier = Modifier
                                 .size(68.dp)
+                                .clip(CircleShape)
                                 .clickable {
                                     when (key) {
                                         "C" -> {

@@ -36,7 +36,7 @@ fun TvFocusableCard(
     val isFocused by interactionSource.collectIsFocusedAsState()
 
     val scale by animateFloatAsState(
-        targetValue = if (isFocused) 1.05f else 1.0f,
+        targetValue = if (isFocused) 1.06f else 1.0f,
         label = "tv_card_scale"
     )
 
@@ -45,12 +45,12 @@ fun TvFocusableCard(
     Surface(
         onClick = onClick,
         shape = shape,
-        color = WazeCardBg,
+        color = if (isFocused) Color(0xFFE8F1FC) else WazeCardBg,
         border = BorderStroke(
-            width = if (isFocused) 3.5.dp else 1.5.dp,
+            width = if (isFocused) 4.dp else 1.5.dp,
             color = if (isFocused) WazeBlue else WazeBorder
         ),
-        shadowElevation = if (isFocused) 12.dp else 4.dp,
+        shadowElevation = if (isFocused) 14.dp else 4.dp,
         interactionSource = interactionSource,
         modifier = modifier
             .fillMaxWidth()

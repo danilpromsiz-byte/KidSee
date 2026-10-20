@@ -101,4 +101,88 @@
     <string name="btn_save">Guardar</string>
     <string name="btn_delete">Eliminar</string>
     <string name="btn_cancel">Cancelar</string>
+
+    <!-- Age Verification -->
+    <string name="age_verify_title">Verificación de edad de los padres</string>
+    <string name="age_verify_subtitle">Indica tu año de nacimiento. El modo de control parental es solo para adultos (18+).</string>
+    <string name="birth_year_label">AÑO DE NACIMIENTO</string>
+    <string name="age_verified_badge">Edad confirmada (%1$d años)</string>
+    <string name="age_verified_desc">Puedes crear un PIN y perfil de padre</string>
+    <string name="age_restricted_title">Tienes %1$d años — acceso restringido</string>
+    <string name="age_restricted_desc">El modo de padres es estrictamente para mayores de 18 años. Elige el modo hijo para este dispositivo.</string>
+    <string name="btn_setup_as_child">Configurar como Hijo</string>
+
+    <!-- PIN Setup & Verification -->
+    <string name="create_pin_title">Crea un PIN parental</string>
+    <string name="confirm_pin_title">Confirma el PIN</string>
+    <string name="create_pin_desc">Establece tu PIN de 4 dígitos para proteger ajustes de los niños</string>
+    <string name="confirm_pin_desc">Vuelve a introducir los 4 dígitos para confirmar</string>
+    <string name="pin_mismatch_error">¡Los PIN no coinciden! Inténtalo de nuevo.</string>
+    <string name="enter_parent_pin_title">Introduce el PIN parental</string>
+    <string name="enter_parent_pin_desc">Ajustes protegidos de los niños</string>
+    <string name="wrong_pin_error">PIN incorrecto, inténtalo de nuevo</string>
+    <string name="parent_lock_title">Control parental</string>
+    <string name="enter_pin_to_access">Introduce el código PIN para acceder</string>
+
+    <!-- Settings Dialog -->
+    <string name="settings_title">Ajustes</string>
+    <string name="check_updates_title">Buscar actualizaciones</string>
+    <string name="check_updates_desc">Buscar nueva versión en GitHub</string>
+    <string name="update_checking">Comprobando servidor…</string>
+    <string name="update_available_badge">🔥 ¡Nueva versión disponible!</string>
+    <string name="update_up_to_date">Última versión instalada</string>
+    <string name="parent_pin_title">Código PIN parental</string>
+    <string name="parent_pin_desc">Protege los controles y ajustes de los niños</string>
+    <string name="family_code_title">Código de familia</string>
+    <string name="family_code_desc">Código actual: %1$s (toca para editar)</string>
+    <string name="switch_role_title">Cambiar de modo</string>
+    <string name="switch_role_desc">Alternar entre Padre e Hijo</string>
+    <string name="app_language_title">Idioma de la aplicación</string>
+    <string name="family_code_dialog_desc">Establece un código familiar común para sincronizar dispositivos:</string>
+
+    <!-- Add Device Dialog -->
+    <string name="add_device_title">Conectar dispositivo del hijo</string>
+    <string name="add_device_subtitle">Nuevo dispositivo</string>
+    <string name="add_device_family_desc">Establece tu propio código familiar. Usa el mismo código en el dispositivo de tu hijo:</string>
+    <string name="code_copied_toast">¡Código familiar copiado!</string>
+    <string name="add_device_step1">1. Instala KidSee en el teléfono, tableta o TV de tu hijo</string>
+    <string name="add_device_step2">2. Abre la app y selecciona el modo Hijo</string>
+    <string name="add_device_step3">3. Conecta ambos dispositivos a la misma red Wi-Fi (o usa el mismo código)</string>
+    <string name="add_device_by_ip">O conectar directamente por dirección IP:</string>
+    <string name="ip_placeholder">Ej: 192.168.1.45</string>
+    <string name="btn_find">Buscar</string>
+    <string name="rescan_wifi_devices">Buscar dispositivos Wi-Fi</string>
+    <string name="searching_wifi_network">Escaneando red Wi-Fi…</string>
+    <string name="btn_rescan">Reintentar búsqueda Wi-Fi</string>
+    <string name="btn_done">Listo</string>
+
+    <!-- LAN / Wi-Fi Pairing -->
+    <string name="link_to_family">+ Vincular a la familia</string>
+    <string name="found_on_wifi">📡 Detectado en Wi-Fi</string>
+    <string name="child_ready_connect">📡 Listo para conectar</string>
+    <string name="child_waiting_parent">Abre KidSee en el teléfono del padre en la misma red Wi-Fi para conectar</string>
+    <string name="active_protections">Protecciones activas</string>
+    <string name="prot_screen_mon">Monitoreo seguro de pantalla</string>
+    <string name="prot_schedules">Horarios de estudio y descanso</string>
+    <string name="prot_voice_notes">Mensajes de voz directos</string>
+    <string name="connect_another_device">+ Conectar otro dispositivo</string>
+    <string name="device_linked_toast">¡Dispositivo %1$s vinculado a tu familia!</string>
+
+    <!-- Update Dialog -->
+    <string name="update_available_title">Actualización disponible</string>
+    <string name="btn_update_now">Actualizar ahora</string>
+    <string name="btn_later">Más tarde</string>
+    <string name="downloading_progress">Descargando: %1$d%%</string>
+
+    <!-- Additional UI Keys -->
+    <string name="select_language_desc">Idioma de la interfaz de la aplicación</string>
+    <string name="family_code_label">CÓDIGO DE FAMILIA</string>
+    <string name="family_code_updated_toast">Código de familia actualizado: %1$s</string>
+    <string name="pin_updated_toast">¡Código PIN actualizado con éxito!</string>
+    <string name="enter_current_pin_title">Introduce el PIN actual</string>
+    <string name="enter_current_pin_desc">Confirma tu PIN actual</string>
+    <string name="enter_new_pin_title">Introduce el nuevo PIN</string>
+    <string name="enter_new_pin_desc">Establece un nuevo PIN de 4 dígitos</string>
+    <string name="direct_ip_probe_toast">Enviando solicitud a %1$s…</string>
+    <string name="wifi_ip_badge">📡 Wi-Fi IP: %1$s</string>
 </resources>

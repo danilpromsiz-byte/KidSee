@@ -139,7 +139,7 @@ fun KidSeeCard(
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.98f else if (isFocused) 1.03f else 1.0f,
+        targetValue = if (isPressed) 0.98f else if (isFocused) 1.05f else 1.0f,
         label = "card_scale"
     )
 
@@ -149,12 +149,12 @@ fun KidSeeCard(
         Surface(
             onClick = onClick,
             shape = shape,
-            color = backgroundColor,
+            color = if (isFocused && backgroundColor == Color.White) Color(0xFFE8F1FC) else backgroundColor,
             border = BorderStroke(
-                width = if (isFocused) 3.5.dp else 1.5.dp,
+                width = if (isFocused) 4.dp else 1.5.dp,
                 color = if (isFocused) WazeBlue else borderColor
             ),
-            shadowElevation = if (isFocused) 10.dp else elevation,
+            shadowElevation = if (isFocused) 12.dp else elevation,
             interactionSource = interactionSource,
             modifier = modifier
                 .fillMaxWidth()
@@ -168,12 +168,12 @@ fun KidSeeCard(
     } else {
         Surface(
             shape = shape,
-            color = backgroundColor,
+            color = if (isFocused && backgroundColor == Color.White) Color(0xFFE8F1FC) else backgroundColor,
             border = BorderStroke(
-                width = if (isFocused) 3.5.dp else 1.5.dp,
+                width = if (isFocused) 4.dp else 1.5.dp,
                 color = if (isFocused) WazeBlue else borderColor
             ),
-            shadowElevation = if (isFocused) 10.dp else elevation,
+            shadowElevation = if (isFocused) 12.dp else elevation,
             modifier = modifier
                 .fillMaxWidth()
                 .scale(scale)

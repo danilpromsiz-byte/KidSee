@@ -79,7 +79,7 @@ fun UpdateDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Update Available",
+                    text = stringResource(R.string.update_available_title),
                     style = KidSeeTypography.headlineMedium.copy(
                         color = WazeBlue,
                         fontWeight = FontWeight.Bold
@@ -126,7 +126,7 @@ fun UpdateDialog(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Downloading: ${updateState.progressPercent}%",
+                                text = stringResource(R.string.downloading_progress, updateState.progressPercent),
                                 style = KidSeeTypography.bodySmall.copy(color = WazeTextSecondary)
                             )
                         }
@@ -140,14 +140,14 @@ fun UpdateDialog(
                         ) {
                             TextButton(onClick = onDismiss) {
                                 Text(
-                                    text = "Later",
+                                    text = stringResource(R.string.btn_later),
                                     color = WazeTextSecondary,
                                     fontWeight = FontWeight.Medium
                                 )
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             KidSeePillButton(
-                                text = "Update Now",
+                                text = stringResource(R.string.btn_update_now),
                                 onClick = { onUpdateClick(updateState.releaseInfo) }
                             )
                         }

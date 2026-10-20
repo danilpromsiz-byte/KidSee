@@ -101,9 +101,12 @@ class LanDiscoveryManager(
                             val dev = activeDeviceProvider?.invoke()
                             if (dev != null && dev.id.isNotBlank()) {
                                 val payload = PREFIX_DEVICE + json.encodeToString(dev)
-                                // Reply directly via unicast to sender at DISCOVERY_PORT
+                                // Reply directly via unicast to sender at DISCOVERY_PORT and at sender's port
                                 if (senderAddress != null) {
                                     sendDirectUdpPacket(payload, senderAddress, DISCOVERY_PORT)
+                                    if (packet.port != DISCOVERY_PORT && packet.port > 0) {
+                                        sendDirectUdpPacket(payload, senderAddress, packet.port)
+                                    }
                                 }
                                 // Also broadcast locally
                                 sendUdpPacket(payload)
@@ -165,12 +168,13 @@ class LanDiscoveryManager(
             if (listenSocket == null || listenSocket?.isClosed == true) {
                 listenSocket = DatagramSocket(null).apply {
                     reuseAddress = true
-                    bind(InetSocketAddress(DISCOVERY_PORT))
+                    // Bind explicitly to IPv4 wildcard 0.0.0.0 to prevent IPv6 stack dropping IPv4 broadcast packets
+                    bind(InetSocketAddress(InetAddress.getByName("0.0.0.0"), DISCOVERY_PORT))
                     broadcast = true
                 }
             }
         } catch (e: Exception) {
-            Timber.e(e, "Failed to bind listenSocket on port $DISCOVERY_PORT")
+            Timber.e(e, "Failed to bind listenSocket on 0.0.0.0:$DISCOVERY_PORT")
             try {
                 listenSocket = DatagramSocket(DISCOVERY_PORT).apply { broadcast = true }
             } catch (e2: Exception) {
@@ -180,31 +184,59 @@ class LanDiscoveryManager(
 
         try {
             if (senderSocket == null || senderSocket?.isClosed == true) {
-                senderSocket = DatagramSocket().apply { broadcast = true }
+                senderSocket = DatagramSocket(null).apply {
+                    reuseAddress = true
+                    bind(InetSocketAddress(InetAddress.getByName("0.0.0.0"), 0))
+                    broadcast = true
+                }
             }
         } catch (e: Exception) {
             Timber.e(e, "Failed to create senderSocket")
+            try {
+                senderSocket = DatagramSocket().apply { broadcast = true }
+            } catch (_: Exception) {}
+        }
+    }
+
+    /**
+     * Probes a specific IP address directly (useful for manual pairing or bypassing AP isolation).
+     */
+    fun probeIp(targetIp: String) {
+        startListening()
+        scope.launch {
+            try {
+                val pingData = PREFIX_PING.toByteArray(Charsets.UTF_8)
+                val target = InetAddress.getByName(targetIp.trim())
+                val s = senderSocket ?: DatagramSocket().apply { broadcast = true }
+                repeat(3) {
+                    s.send(DatagramPacket(pingData, pingData.size, target, DISCOVERY_PORT))
+                    delay(80L)
+                }
+                Timber.d("Sent direct LAN probe to $targetIp:$DISCOVERY_PORT")
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to probe IP $targetIp")
+            }
         }
     }
 
     /**
      * Triggers active rescan by broadcasting discovery ping probes across all interfaces
-     * and sweeping the local /24 Wi-Fi subnet.
+     * and sweeping all local Wi-Fi / Ethernet /24 subnets.
      */
     fun rescan() {
         startListening()
         scope.launch {
-            // 1. Broadcast pings
-            repeat(2) {
+            // 1. Broadcast pings across all interfaces
+            repeat(3) {
                 sendUdpPacket(PREFIX_PING)
-                delay(80L)
+                delay(60L)
             }
 
-            // 2. Unicast sweep across local /24 subnet (essential if router blocks broadcast)
-            val prefix = getSubnetBasePrefix()
-            if (prefix != null) {
-                val pingData = PREFIX_PING.toByteArray(Charsets.UTF_8)
-                val s = senderSocket ?: return@launch
+            // 2. Unicast sweep across local Wi-Fi / Ethernet /24 subnets (essential if router blocks broadcast)
+            val prefixes = getSubnetBasePrefixes()
+            val pingData = PREFIX_PING.toByteArray(Charsets.UTF_8)
+            val s = senderSocket ?: return@launch
+            for (prefix in prefixes) {
                 for (i in 1..254) {
                     try {
                         val target = InetAddress.getByName("$prefix.$i")
@@ -272,7 +304,53 @@ class LanDiscoveryManager(
         }
     }
 
-    private fun getSubnetBasePrefix(): String? {
+    /**
+     * Returns all local IPv4 addresses on Wi-Fi and Ethernet interfaces,
+     * strictly excluding cellular / mobile data interfaces.
+     */
+    fun getLocalWifiIpAddresses(): List<String> {
+        val result = mutableListOf<String>()
+        try {
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces() ?: return emptyList()
+            while (interfaces.hasMoreElements()) {
+                val iface = interfaces.nextElement()
+                if (iface.isLoopback || !iface.isUp) continue
+                val name = iface.name.lowercase()
+                // Strictly exclude cellular, mobile data, and virtual tunnels
+                if (name.startsWith("rmnet") || name.startsWith("ccmni") || name.startsWith("pdp") ||
+                    name.startsWith("dummy") || name.startsWith("tun") || name.startsWith("wwan") ||
+                    name.startsWith("cellular") || name.startsWith("ppp")) {
+                    continue
+                }
+                for (addr in iface.inetAddresses) {
+                    if (addr is java.net.Inet4Address && !addr.isLoopbackAddress) {
+                        val host = addr.hostAddress ?: continue
+                        if (!host.startsWith("127.")) {
+                            result.add(host)
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "Error getting local Wi-Fi IP addresses")
+        }
+        return result
+    }
+
+    /**
+     * Primary Wi-Fi or local network IP (e.g. 192.168.1.45)
+     */
+    fun getPrimaryLocalIp(): String? {
+        val list = getLocalWifiIpAddresses()
+        return list.firstOrNull { it.startsWith("192.168.") }
+            ?: list.firstOrNull { it.startsWith("10.") || it.startsWith("172.") }
+            ?: list.firstOrNull()
+    }
+
+    private fun getSubnetBasePrefixes(): List<String> {
+        val prefixes = mutableSetOf<String>()
+
+        // 1. Wi-Fi DHCP Info
         try {
             val wifi = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
             val dhcp = wifi?.dhcpInfo
@@ -281,33 +359,28 @@ class LanDiscoveryManager(
                 val b0 = ip and 0xFF
                 val b1 = (ip shr 8) and 0xFF
                 val b2 = (ip shr 16) and 0xFF
-                return "$b0.$b1.$b2"
+                prefixes.add("$b0.$b1.$b2")
             }
+        } catch (_: Exception) {}
 
-            val interfaces = java.net.NetworkInterface.getNetworkInterfaces() ?: return null
-            while (interfaces.hasMoreElements()) {
-                val iface = interfaces.nextElement()
-                if (iface.isLoopback) continue
-                for (addr in iface.inetAddresses) {
-                    if (addr is java.net.Inet4Address && !addr.isLoopbackAddress) {
-                        val host = addr.hostAddress ?: continue
-                        val parts = host.split(".")
-                        if (parts.size == 4) {
-                            return "${parts[0]}.${parts[1]}.${parts[2]}"
-                        }
-                    }
-                }
+        // 2. Wi-Fi & Ethernet Network Interfaces
+        for (ip in getLocalWifiIpAddresses()) {
+            val parts = ip.split(".")
+            if (parts.size == 4) {
+                prefixes.add("${parts[0]}.${parts[1]}.${parts[2]}")
             }
-        } catch (e: Exception) {
-            Timber.w(e, "Could not determine subnet prefix")
         }
-        return null
+        return prefixes.toList()
+    }
+
+    private fun getSubnetBasePrefix(): String? {
+        return getSubnetBasePrefixes().firstOrNull()
     }
 
     private fun getBroadcastAddresses(): List<InetAddress> {
         val list = mutableListOf<InetAddress>()
         try {
-            // 1. Always include standard 255.255.255.255
+            // 1. Universal IPv4 Broadcast
             list.add(InetAddress.getByName(BROADCAST_IP))
 
             // 2. Wi-Fi DHCP calculated subnet broadcast
@@ -323,12 +396,17 @@ class LanDiscoveryManager(
                 if (!list.contains(bcastAddr)) list.add(bcastAddr)
             }
 
-            // 3. NetworkInterface interfaceAddresses
+            // 3. NetworkInterface interfaceAddresses (Wi-Fi and Ethernet only)
             val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
             if (interfaces != null) {
                 while (interfaces.hasMoreElements()) {
                     val iface = interfaces.nextElement()
-                    if (iface.isLoopback) continue
+                    if (iface.isLoopback || !iface.isUp) continue
+                    val name = iface.name.lowercase()
+                    if (name.startsWith("rmnet") || name.startsWith("ccmni") || name.startsWith("pdp") ||
+                        name.startsWith("dummy") || name.startsWith("tun") || name.startsWith("wwan")) {
+                        continue
+                    }
                     for (ifAddr in iface.interfaceAddresses) {
                         val bcast = ifAddr.broadcast
                         if (bcast != null && !list.contains(bcast)) {

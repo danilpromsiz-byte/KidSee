@@ -4,5 +4,6 @@
         <item name="android:statusBarColor">#F9F7F1</item>
         <item name="android:navigationBarColor">#F9F7F1</item>
         <item name="android:windowLightStatusBar">true</item>
+        <item name="android:defaultFocusHighlightEnabled">false</item>
     </style>
 </resources>

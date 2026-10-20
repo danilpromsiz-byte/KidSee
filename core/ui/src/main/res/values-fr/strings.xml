@@ -101,4 +101,88 @@
     <string name="btn_save">Enregistrer</string>
     <string name="btn_delete">Supprimer</string>
     <string name="btn_cancel">Annuler</string>
+
+    <!-- Age Verification -->
+    <string name="age_verify_title">Vérification de l\'âge du parent</string>
+    <string name="age_verify_subtitle">Indiquez votre année de naissance. Le mode contrôle parental est réservé aux adultes (18+).</string>
+    <string name="birth_year_label">ANNÉE DE NAISSANCE</string>
+    <string name="age_verified_badge">Âge confirmé (%1$d ans)</string>
+    <string name="age_verified_desc">Vous pouvez créer un code PIN et configurer le profil parent</string>
+    <string name="age_restricted_title">Vous avez %1$d ans — accès restreint</string>
+    <string name="age_restricted_desc">Le mode parent est réservé aux adultes (18+). Choisissez le mode Enfant pour cet appareil.</string>
+    <string name="btn_setup_as_child">Configurer en mode Enfant</string>
+
+    <!-- PIN Setup & Verification -->
+    <string name="create_pin_title">Créer le code PIN parent</string>
+    <string name="confirm_pin_title">Confirmer le code PIN parent</string>
+    <string name="create_pin_desc">Définissez votre code PIN à 4 chiffres pour protéger les paramètres des enfants</string>
+    <string name="confirm_pin_desc">Saisissez à nouveau les 4 chiffres pour confirmer</string>
+    <string name="pin_mismatch_error">Les codes PIN ne correspondent pas ! Réessayez.</string>
+    <string name="enter_parent_pin_title">Saisir le code PIN parent</string>
+    <string name="enter_parent_pin_desc">Paramètres protégés des enfants</string>
+    <string name="wrong_pin_error">Code PIN incorrect, réessayez</string>
+    <string name="parent_lock_title">Contrôle parental</string>
+    <string name="enter_pin_to_access">Entrez le code PIN pour accéder aux contrôles</string>
+
+    <!-- Settings Dialog -->
+    <string name="settings_title">Paramètres</string>
+    <string name="check_updates_title">Vérifier les mises à jour</string>
+    <string name="check_updates_desc">Vérifier la dernière version sur GitHub</string>
+    <string name="update_checking">Vérification sur le serveur…</string>
+    <string name="update_available_badge">🔥 Nouvelle version disponible !</string>
+    <string name="update_up_to_date">Dernière version installée</string>
+    <string name="parent_pin_title">Code PIN parent</string>
+    <string name="parent_pin_desc">Protéger les commandes et réglages contre les enfants</string>
+    <string name="family_code_title">Code de famille</string>
+    <string name="family_code_desc">Code actuel : %1$s (appuyez pour modifier)</string>
+    <string name="switch_role_title">Changer de mode</string>
+    <string name="switch_role_desc">Basculer entre Parent et Enfant</string>
+    <string name="app_language_title">Langue de l\'application</string>
+    <string name="family_code_dialog_desc">Définir un code de famille commun pour synchroniser les appareils :</string>
+
+    <!-- Add Device Dialog -->
+    <string name="add_device_title">Connecter l\'appareil enfant</string>
+    <string name="add_device_subtitle">Association de l\'appareil de l\'enfant</string>
+    <string name="add_device_family_desc">Définissez votre code de famille. Utilisez le même sur l\'appareil de l\'enfant :</string>
+    <string name="code_copied_toast">Code de famille copié !</string>
+    <string name="add_device_step1">1. Installez KidSee sur le téléphone, la tablette ou la TV de l\'enfant</string>
+    <string name="add_device_step2">2. Ouvrez l\'application et sélectionnez le mode Enfant</string>
+    <string name="add_device_step3">3. Connectez les deux appareils au même réseau Wi-Fi (ou saisissez le même code de famille)</string>
+    <string name="add_device_by_ip">Ou connectez directement par adresse IP :</string>
+    <string name="ip_placeholder">ex. 192.168.1.45</string>
+    <string name="btn_find">Trouver</string>
+    <string name="rescan_wifi_devices">Rechercher les appareils Wi-Fi</string>
+    <string name="searching_wifi_network">Analyse du réseau Wi-Fi…</string>
+    <string name="btn_rescan">Relancer la recherche Wi-Fi</string>
+    <string name="btn_done">Terminé</string>
+
+    <!-- LAN / Wi-Fi Pairing -->
+    <string name="link_to_family">+ Lier à la famille</string>
+    <string name="found_on_wifi">📡 Découvert sur le Wi-Fi</string>
+    <string name="child_ready_connect">📡 Prêt à être connecté</string>
+    <string name="child_waiting_parent">Ouvrez KidSee sur l\'appareil du parent sur ce réseau Wi-Fi pour vous connecter</string>
+    <string name="active_protections">Protections actives</string>
+    <string name="prot_screen_mon">Surveillance sécurisée de l\'écran</string>
+    <string name="prot_schedules">Horaires de sommeil et d\'école</string>
+    <string name="prot_voice_notes">Notes vocales parentales directes</string>
+    <string name="connect_another_device">+ Connecter un autre appareil</string>
+    <string name="device_linked_toast">L\'appareil %1$s est lié à votre famille !</string>
+
+    <!-- Update Dialog -->
+    <string name="update_available_title">Mise à jour disponible</string>
+    <string name="btn_update_now">Mettre à jour maintenant</string>
+    <string name="btn_later">Plus tard</string>
+    <string name="downloading_progress">Téléchargement : %1$d%%</string>
+
+    <!-- Additional UI Keys -->
+    <string name="select_language_desc">Langue de l\'interface de l\'application</string>
+    <string name="family_code_label">CODE DE FAMILLE</string>
+    <string name="family_code_updated_toast">Code de famille mis à jour : %1$s</string>
+    <string name="pin_updated_toast">Code PIN mis à jour avec succès !</string>
+    <string name="enter_current_pin_title">Entrez le PIN actuel</string>
+    <string name="enter_current_pin_desc">Confirmez le code PIN actuel</string>
+    <string name="enter_new_pin_title">Entrez le nouveau PIN</string>
+    <string name="enter_new_pin_desc">Définissez un nouveau code PIN à 4 chiffres</string>
+    <string name="direct_ip_probe_toast">Envoi de la requête à %1$s…</string>
+    <string name="wifi_ip_badge">📡 Wi-Fi IP: %1$s</string>
 </resources>

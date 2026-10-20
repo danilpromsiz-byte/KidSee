@@ -33,9 +33,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.kidsee.core.ui.R
 import com.kidsee.core.ui.theme.KidSeeTypography
 import com.kidsee.core.ui.theme.WazeBlue
 import com.kidsee.core.ui.theme.WazeCardBg
@@ -47,8 +49,8 @@ import com.kidsee.core.ui.theme.WazeTextSecondary
 @Composable
 fun PinCodeDialog(
     correctPin: String? = null,
-    title: String = "Введите PIN-код родителя",
-    description: String = "Защита настроек от детей",
+    title: String = stringResource(R.string.enter_parent_pin_title),
+    description: String = stringResource(R.string.enter_parent_pin_desc),
     canDismiss: Boolean = true,
     onSuccess: (String) -> Unit,
     onDismiss: () -> Unit = {}
@@ -123,7 +125,7 @@ fun PinCodeDialog(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = if (isError) "Неверный PIN-код, попробуйте снова" else description,
+                    text = if (isError) stringResource(R.string.wrong_pin_error) else description,
                     style = KidSeeTypography.bodyMedium.copy(
                         color = if (isError) WazeRed else WazeTextSecondary,
                         fontSize = 13.sp
@@ -197,7 +199,7 @@ fun PinCodeDialog(
 
                     TextButton(onClick = onDismiss) {
                         Text(
-                            text = "Отмена",
+                            text = stringResource(R.string.btn_cancel),
                             style = KidSeeTypography.bodyMedium.copy(
                                 color = WazeTextSecondary,
                                 fontWeight = FontWeight.SemiBold

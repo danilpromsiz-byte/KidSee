@@ -19,6 +19,7 @@ import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -27,6 +28,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.os.LocaleListCompat
 import com.kidsee.app.ui.child.ChildActiveScreen
 import com.kidsee.app.ui.components.AddDeviceDialog
@@ -44,6 +47,7 @@ import com.kidsee.core.domain.model.ChildDevice
 import com.kidsee.core.domain.model.CommandType
 import com.kidsee.core.domain.model.DeviceCommand
 import com.kidsee.core.domain.model.UserRole
+import com.kidsee.core.ui.R
 import com.kidsee.core.ui.theme.KidSeeTheme
 import com.kidsee.core.ui.util.LocaleHelper
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -85,6 +89,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Disable platform default focus highlight rectangle on Android TV & API 26+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            window.decorView.defaultFocusHighlightEnabled = false
+        }
+
         val filter = IntentFilter().apply {
             addAction(ACTION_PIP_PLAY_PAUSE)
             addAction(ACTION_PIP_LOCK)
@@ -121,264 +130,276 @@ class MainActivity : AppCompatActivity() {
         val childState by app.stateManager.currentDeviceState.collectAsState()
         val updateState by appUpdateManager.updateState.collectAsState()
 
-        var isParentUnlocked by rememberSaveable { mutableStateOf(false) }
-        var showUpdateDialog by remember { mutableStateOf(false) }
-        var showSettingsDialog by remember { mutableStateOf(false) }
-        var showAddDeviceDialog by remember { mutableStateOf(false) }
-        var showPinDialog by remember { mutableStateOf(false) }
-        var pinPromptTitle by remember { mutableStateOf("Введите PIN-код родителя") }
-        var pinPromptDescription by remember { mutableStateOf("Защита настроек от детей") }
-        var pinExpectedValue by remember { mutableStateOf<String?>(null) }
-        var pinSuccessCallback by remember { mutableStateOf<((String) -> Unit)?>(null) }
-
-        fun changeLanguage(langCode: String, recreateActivity: Boolean = true) {
-            scope.launch {
-                repository.saveLanguage(langCode)
-                LocaleHelper.applyLanguage(this@MainActivity, langCode, recreateActivity = recreateActivity)
-            }
+        val localizedContext = remember(currentLanguage) {
+            LocaleHelper.getLocalizedContext(this@MainActivity, currentLanguage)
         }
 
-        LaunchedEffect(Unit) {
-            appUpdateManager.checkForUpdates(isManual = false)
-        }
+        CompositionLocalProvider(
+            LocalContext provides localizedContext,
+            LocalConfiguration provides localizedContext.resources.configuration
+        ) {
+            var isParentUnlocked by rememberSaveable { mutableStateOf(false) }
+            var showUpdateDialog by remember { mutableStateOf(false) }
+            var showSettingsDialog by remember { mutableStateOf(false) }
+            var showAddDeviceDialog by remember { mutableStateOf(false) }
+            var showPinDialog by remember { mutableStateOf(false) }
+            var pinPromptTitle by remember { mutableStateOf(localizedContext.getString(R.string.enter_parent_pin_title)) }
+            var pinPromptDescription by remember { mutableStateOf(localizedContext.getString(R.string.enter_parent_pin_desc)) }
+            var pinExpectedValue by remember { mutableStateOf<String?>(null) }
+            var pinSuccessCallback by remember { mutableStateOf<((String) -> Unit)?>(null) }
 
-        if (showUpdateDialog || updateState is UpdateState.UpdateAvailable || updateState is UpdateState.Downloading) {
-            UpdateDialog(
-                updateState = updateState,
-                onDismiss = { showUpdateDialog = false },
-                onUpdateClick = { releaseInfo ->
-                    scope.launch {
-                        appUpdateManager.downloadAndInstall(releaseInfo)
-                    }
+            fun changeLanguage(langCode: String, recreateActivity: Boolean = false) {
+                scope.launch {
+                    repository.saveLanguage(langCode)
+                    LocaleHelper.applyLanguage(this@MainActivity, langCode, recreateActivity = recreateActivity)
                 }
-            )
-        }
+            }
 
-        // Add Device Dialog
-        if (showAddDeviceDialog) {
-            AddDeviceDialog(
-                familyId = familyId,
-                onUpdateFamilyId = { newFamilyId ->
-                    scope.launch {
-                        repository.saveFamilyId(newFamilyId)
-                    }
-                },
-                onRescan = {
-                    app.stateManager.lanDiscoveryManager.rescan()
-                },
-                onDismiss = { showAddDeviceDialog = false }
-            )
-        }
+            LaunchedEffect(Unit) {
+                appUpdateManager.checkForUpdates(isManual = false)
+            }
 
-        // Settings Dialog
-        if (showSettingsDialog) {
-            SettingsDialog(
-                currentVersion = appUpdateManager.getCurrentVersionName(),
-                updateState = updateState,
-                familyId = familyId,
-                currentLanguage = currentLanguage,
-                onCheckUpdate = {
-                    scope.launch {
-                        appUpdateManager.checkForUpdates(isManual = true)
+            if (showUpdateDialog || updateState is UpdateState.UpdateAvailable || updateState is UpdateState.Downloading) {
+                UpdateDialog(
+                    updateState = updateState,
+                    onDismiss = { showUpdateDialog = false },
+                    onUpdateClick = { releaseInfo ->
+                        scope.launch {
+                            appUpdateManager.downloadAndInstall(releaseInfo)
+                        }
                     }
-                },
-                onUpdateFamilyId = { newFamilyId ->
-                    scope.launch {
-                        repository.saveFamilyId(newFamilyId)
-                        Toast.makeText(this@MainActivity, "Код семьи изменен: $newFamilyId", Toast.LENGTH_SHORT).show()
-                    }
-                },
-                onChangePin = {
-                    showSettingsDialog = false
-                    pinPromptTitle = "Введите текущий PIN"
-                    pinPromptDescription = "Подтвердите текущий PIN-код"
-                    pinExpectedValue = parentPin
-                    pinSuccessCallback = {
-                        // After verifying old PIN, prompt for new PIN
-                        pinPromptTitle = "Введите новый PIN-код"
-                        pinPromptDescription = "Задайте новый 4-значный PIN"
-                        pinExpectedValue = null // accept any 4 digits
-                        pinSuccessCallback = { newPin ->
-                            scope.launch {
-                                repository.saveParentPin(newPin)
-                                Toast.makeText(this@MainActivity, "PIN-код успешно изменен!", Toast.LENGTH_SHORT).show()
+                )
+            }
+
+            // Add Device Dialog
+            if (showAddDeviceDialog) {
+                AddDeviceDialog(
+                    familyId = familyId,
+                    onUpdateFamilyId = { newFamilyId ->
+                        scope.launch {
+                            repository.saveFamilyId(newFamilyId)
+                        }
+                    },
+                    onRescan = {
+                        app.stateManager.lanDiscoveryManager.rescan()
+                    },
+                    onProbeIp = { ip ->
+                        app.stateManager.lanDiscoveryManager.probeIp(ip)
+                    },
+                    onDismiss = { showAddDeviceDialog = false }
+                )
+            }
+
+            // Settings Dialog
+            if (showSettingsDialog) {
+                SettingsDialog(
+                    currentVersion = appUpdateManager.getCurrentVersionName(),
+                    updateState = updateState,
+                    familyId = familyId,
+                    currentLanguage = currentLanguage,
+                    onCheckUpdate = {
+                        scope.launch {
+                            appUpdateManager.checkForUpdates(isManual = true)
+                        }
+                    },
+                    onUpdateFamilyId = { newFamilyId ->
+                        scope.launch {
+                            repository.saveFamilyId(newFamilyId)
+                            Toast.makeText(this@MainActivity, localizedContext.getString(R.string.family_code_updated_toast, newFamilyId), Toast.LENGTH_SHORT).show()
+                        }
+                    },
+                    onChangePin = {
+                        showSettingsDialog = false
+                        pinPromptTitle = localizedContext.getString(R.string.enter_current_pin_title)
+                        pinPromptDescription = localizedContext.getString(R.string.enter_current_pin_desc)
+                        pinExpectedValue = parentPin
+                        pinSuccessCallback = {
+                            // After verifying old PIN, prompt for new PIN
+                            pinPromptTitle = localizedContext.getString(R.string.enter_new_pin_title)
+                            pinPromptDescription = localizedContext.getString(R.string.enter_new_pin_desc)
+                            pinExpectedValue = null // accept any 4 digits
+                            pinSuccessCallback = { newPin ->
+                                scope.launch {
+                                    repository.saveParentPin(newPin)
+                                    Toast.makeText(this@MainActivity, localizedContext.getString(R.string.pin_updated_toast), Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            showPinDialog = true
+                        }
+                        showPinDialog = true
+                    },
+                    onSwitchRole = {
+                        showSettingsDialog = false
+                        scope.launch {
+                            val newRole = if (roleState == UserRole.PARENT) UserRole.CHILD else UserRole.PARENT
+                            repository.saveRole(newRole)
+                            if (newRole == UserRole.CHILD) {
+                                app.stateManager.startChildServices()
+                            } else {
+                                app.stateManager.stopChildServices()
                             }
                         }
-                        showPinDialog = true
-                    }
-                    showPinDialog = true
-                },
-                onSwitchRole = {
-                    showSettingsDialog = false
-                    scope.launch {
-                        val newRole = if (roleState == UserRole.PARENT) UserRole.CHILD else UserRole.PARENT
-                        repository.saveRole(newRole)
-                        if (newRole == UserRole.CHILD) {
-                            app.stateManager.startChildServices()
-                        } else {
-                            app.stateManager.stopChildServices()
-                        }
-                    }
-                },
-                onLanguageChanged = { langCode ->
-                    changeLanguage(langCode)
-                },
-                onDismiss = { showSettingsDialog = false }
-            )
-        }
-
-        // PIN Code Protection Dialog
-        if (showPinDialog) {
-            PinCodeDialog(
-                correctPin = pinExpectedValue,
-                title = pinPromptTitle,
-                description = pinPromptDescription,
-                canDismiss = true,
-                onSuccess = { enteredPin ->
-                    showPinDialog = false
-                    val cb = pinSuccessCallback
-                    pinSuccessCallback = null
-                    cb?.invoke(enteredPin)
-                },
-                onDismiss = {
-                    showPinDialog = false
-                    pinSuccessCallback = null
-                }
-            )
-        }
-
-        LaunchedEffect(roleState, isSetupComplete) {
-            if (roleState == UserRole.PARENT) {
-                app.stateManager.lanDiscoveryManager.startListening()
-                app.stateManager.lanDiscoveryManager.rescan()
-            } else if (roleState == UserRole.CHILD) {
-                app.stateManager.startChildServices()
+                    },
+                    onLanguageChanged = { langCode ->
+                        changeLanguage(langCode, recreateActivity = false)
+                    },
+                    onDismiss = { showSettingsDialog = false }
+                )
             }
-        }
 
-        val familyDevicesFlow = remember(familyId) {
-            repository.observeFamilyDevices(familyId)
-        }
-
-        val isTv = isAndroidTv()
-
-        if (roleState == null) {
-            OnboardingScreen(
-                currentLanguage = currentLanguage,
-                onLanguageChanged = { langCode ->
-                    changeLanguage(langCode, recreateActivity = false)
-                },
-                onRoleSelected = { role ->
-                    scope.launch {
-                        repository.saveRole(role)
-                        if (role == UserRole.CHILD) {
-                            app.stateManager.startChildServices()
-                        }
+            // PIN Code Protection Dialog
+            if (showPinDialog) {
+                PinCodeDialog(
+                    correctPin = pinExpectedValue,
+                    title = pinPromptTitle,
+                    description = pinPromptDescription,
+                    canDismiss = true,
+                    onSuccess = { enteredPin ->
+                        showPinDialog = false
+                        val cb = pinSuccessCallback
+                        pinSuccessCallback = null
+                        cb?.invoke(enteredPin)
+                    },
+                    onDismiss = {
+                        showPinDialog = false
+                        pinSuccessCallback = null
                     }
-                },
-                onParentRegistered = { pin ->
-                    scope.launch {
-                        repository.saveParentPin(pin)
-                        repository.saveRole(UserRole.PARENT)
-                        isParentUnlocked = true
-                    }
+                )
+            }
+
+            LaunchedEffect(roleState, isSetupComplete) {
+                if (roleState == UserRole.PARENT) {
+                    app.stateManager.lanDiscoveryManager.startListening()
+                    app.stateManager.lanDiscoveryManager.rescan()
+                } else if (roleState == UserRole.CHILD) {
+                    app.stateManager.startChildServices()
                 }
-            )
-        } else if (roleState == UserRole.CHILD) {
-            if (!isSetupComplete) {
-                ChildSetupScreen(
-                    onSetupComplete = {
+            }
+
+            val familyDevicesFlow = remember(familyId) {
+                repository.observeFamilyDevices(familyId)
+            }
+
+            val isTv = isAndroidTv()
+
+            if (roleState == null) {
+                OnboardingScreen(
+                    currentLanguage = currentLanguage,
+                    onLanguageChanged = { langCode ->
+                        changeLanguage(langCode, recreateActivity = false)
+                    },
+                    onRoleSelected = { role ->
                         scope.launch {
-                            repository.completeSetup()
-                            app.stateManager.startChildServices()
+                            repository.saveRole(role)
+                            if (role == UserRole.CHILD) {
+                                app.stateManager.startChildServices()
+                            }
+                        }
+                    },
+                    onParentRegistered = { pin ->
+                        scope.launch {
+                            repository.saveParentPin(pin)
+                            repository.saveRole(UserRole.PARENT)
+                            isParentUnlocked = true
                         }
                     }
                 )
-            } else {
-                ChildActiveScreen(
-                    device = childState,
-                    onSettingsClick = {
-                        pinPromptTitle = "Введите PIN-код родителя"
-                        pinPromptDescription = "Защита настроек от детей"
-                        pinExpectedValue = parentPin
-                        pinSuccessCallback = { showSettingsDialog = true }
-                        showPinDialog = true
-                    }
-                )
-            }
-        } else {
-            // Parent Mode
-            if (!isParentUnlocked) {
-                ParentLockScreen(
-                    correctPin = parentPin,
-                    onUnlock = { isParentUnlocked = true }
-                )
-            } else {
-                val activeDevice = selectedDevice
-                if (activeDevice != null) {
-                    DeviceDetailScreen(
-                        device = activeDevice,
-                        onBackClick = { selectedDevice = null },
-                        onPipClick = { enterPictureInPicture() },
-                        onLockToggle = {
-                            val cmdType = if (activeDevice.isScreenLocked) CommandType.UNLOCK_SCREEN else CommandType.LOCK_SCREEN
-                            sendCommand(activeDevice.id, cmdType)
-                            selectedDevice = activeDevice.copy(isScreenLocked = !activeDevice.isScreenLocked)
-                        },
-                        onMediaPlay = { sendCommand(activeDevice.id, CommandType.MEDIA_PLAY) },
-                        onMediaPause = { sendCommand(activeDevice.id, CommandType.MEDIA_PAUSE) },
-                        onMediaNext = { sendCommand(activeDevice.id, CommandType.MEDIA_NEXT) },
-                        onMediaPrev = { sendCommand(activeDevice.id, CommandType.MEDIA_PREV) },
-                        onVolumeChanged = { vol ->
-                            sendCommand(activeDevice.id, CommandType.VOLUME_SET, vol.toString())
-                        },
-                        onPushToTalkStart = {
-                            Timber.d("Push-to-Talk started for ${activeDevice.id}")
-                        },
-                        onPushToTalkStop = {
-                            Timber.d("Push-to-Talk stopped for ${activeDevice.id}")
-                        },
-                        onSendVoiceNote = {
-                            Timber.d("Send voice note requested for ${activeDevice.id}")
+            } else if (roleState == UserRole.CHILD) {
+                if (!isSetupComplete) {
+                    ChildSetupScreen(
+                        onSetupComplete = {
+                            scope.launch {
+                                repository.completeSetup()
+                                app.stateManager.startChildServices()
+                            }
                         }
                     )
                 } else {
-                    ParentDashboardScreen(
-                        devicesFlow = familyDevicesFlow,
-                        currentFamilyId = familyId,
-                        onAdoptDevice = { device ->
-                            sendCommand(device.id, CommandType.SET_FAMILY, familyId)
-                            Toast.makeText(this@MainActivity, "Устройство ${device.name} привязано к семье!", Toast.LENGTH_SHORT).show()
-                        },
-                        onDeviceClick = { device -> selectedDevice = device },
-                        onDevicePipClick = { device ->
-                            selectedDevice = device
-                            enterPictureInPicture()
-                        },
-                        onLockToggle = { device ->
-                            val cmdType = if (device.isScreenLocked) CommandType.UNLOCK_SCREEN else CommandType.LOCK_SCREEN
-                            sendCommand(device.id, cmdType)
-                        },
-                        onAddDeviceClick = {
-                            showAddDeviceDialog = true
-                        },
-                        onRescanClick = {
-                            app.stateManager.lanDiscoveryManager.rescan()
-                            Toast.makeText(this@MainActivity, "Поиск устройств в Wi-Fi сети...", Toast.LENGTH_SHORT).show()
-                        },
-                        onCheckUpdateClick = {
-                            scope.launch {
-                                appUpdateManager.checkForUpdates(isManual = true)
-                            }
-                        },
-                        onLockClick = {
-                            isParentUnlocked = false
-                        },
+                    ChildActiveScreen(
+                        device = childState,
                         onSettingsClick = {
-                            showSettingsDialog = true
-                        },
-                        isTv = isTv
+                            pinPromptTitle = localizedContext.getString(R.string.enter_parent_pin_title)
+                            pinPromptDescription = localizedContext.getString(R.string.enter_parent_pin_desc)
+                            pinExpectedValue = parentPin
+                            pinSuccessCallback = { showSettingsDialog = true }
+                            showPinDialog = true
+                        }
                     )
+                }
+            } else {
+                // Parent Mode
+                if (!isParentUnlocked) {
+                    ParentLockScreen(
+                        correctPin = parentPin,
+                        onUnlock = { isParentUnlocked = true }
+                    )
+                } else {
+                    val activeDevice = selectedDevice
+                    if (activeDevice != null) {
+                        DeviceDetailScreen(
+                            device = activeDevice,
+                            onBackClick = { selectedDevice = null },
+                            onPipClick = { enterPictureInPicture() },
+                            onLockToggle = {
+                                val cmdType = if (activeDevice.isScreenLocked) CommandType.UNLOCK_SCREEN else CommandType.LOCK_SCREEN
+                                sendCommand(activeDevice.id, cmdType)
+                                selectedDevice = activeDevice.copy(isScreenLocked = !activeDevice.isScreenLocked)
+                            },
+                            onMediaPlay = { sendCommand(activeDevice.id, CommandType.MEDIA_PLAY) },
+                            onMediaPause = { sendCommand(activeDevice.id, CommandType.MEDIA_PAUSE) },
+                            onMediaNext = { sendCommand(activeDevice.id, CommandType.MEDIA_NEXT) },
+                            onMediaPrev = { sendCommand(activeDevice.id, CommandType.MEDIA_PREV) },
+                            onVolumeChanged = { vol ->
+                                sendCommand(activeDevice.id, CommandType.VOLUME_SET, vol.toString())
+                            },
+                            onPushToTalkStart = {
+                                Timber.d("Push-to-Talk started for ${activeDevice.id}")
+                            },
+                            onPushToTalkStop = {
+                                Timber.d("Push-to-Talk stopped for ${activeDevice.id}")
+                            },
+                            onSendVoiceNote = {
+                                Timber.d("Send voice note requested for ${activeDevice.id}")
+                            }
+                        )
+                    } else {
+                        ParentDashboardScreen(
+                            devicesFlow = familyDevicesFlow,
+                            currentFamilyId = familyId,
+                            onAdoptDevice = { device ->
+                                sendCommand(device.id, CommandType.SET_FAMILY, familyId)
+                                Toast.makeText(this@MainActivity, localizedContext.getString(R.string.device_linked_toast, device.name), Toast.LENGTH_SHORT).show()
+                            },
+                            onDeviceClick = { device -> selectedDevice = device },
+                            onDevicePipClick = { device ->
+                                selectedDevice = device
+                                enterPictureInPicture()
+                            },
+                            onLockToggle = { device ->
+                                val cmdType = if (device.isScreenLocked) CommandType.UNLOCK_SCREEN else CommandType.LOCK_SCREEN
+                                sendCommand(device.id, cmdType)
+                            },
+                            onAddDeviceClick = {
+                                showAddDeviceDialog = true
+                            },
+                            onRescanClick = {
+                                app.stateManager.lanDiscoveryManager.rescan()
+                                Toast.makeText(this@MainActivity, localizedContext.getString(R.string.searching_wifi_network), Toast.LENGTH_SHORT).show()
+                            },
+                            onCheckUpdateClick = {
+                                scope.launch {
+                                    appUpdateManager.checkForUpdates(isManual = true)
+                                }
+                            },
+                            onLockClick = {
+                                isParentUnlocked = false
+                            },
+                            onSettingsClick = {
+                                showSettingsDialog = true
+                            },
+                            isTv = isTv
+                        )
+                    }
                 }
             }
         }

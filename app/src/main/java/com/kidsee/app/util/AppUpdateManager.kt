@@ -9,6 +9,7 @@ import android.widget.Toast
 import androidx.core.content.FileProvider
 import com.kidsee.core.network.updater.GitHubUpdateClient
 import com.kidsee.core.network.updater.ReleaseInfo
+import com.kidsee.core.ui.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,7 +48,7 @@ class AppUpdateManager(
         _updateState.value = UpdateState.Checking
         if (isManual) {
             withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Проверка обновлений на GitHub...", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, context.getString(R.string.update_checking), Toast.LENGTH_SHORT).show()
             }
         }
         try {
@@ -65,7 +66,7 @@ class AppUpdateManager(
                 withContext(Dispatchers.Main) {
                     Toast.makeText(
                         context,
-                        "У вас установлена последняя версия KidSee (${getCurrentVersionName()})",
+                        "${context.getString(R.string.update_up_to_date)} (${getCurrentVersionName()})",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
@@ -75,7 +76,7 @@ class AppUpdateManager(
             _updateState.value = UpdateState.Error("Failed to check updates: ${e.message}")
             if (isManual) {
                 withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Ошибка проверки: ${e.message}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
                 }
             }
         }

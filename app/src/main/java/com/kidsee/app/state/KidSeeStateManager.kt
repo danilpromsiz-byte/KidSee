@@ -35,6 +35,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.Calendar
 
@@ -101,14 +102,19 @@ class KidSeeStateManager(
 
         // 0. Start LAN embedded server & broadcasting of child state
         lanDiscoveryManager.setFrameProvider { ScreenCaptureService.latestJpegFrame }
+        lanDiscoveryManager.onCommandReceived = { command ->
+            executeCommand(command)
+        }
         lanDiscoveryManager.onVoiceMessageReceived = { audioBytes ->
             scope.launch(Dispatchers.IO) {
                 try {
                     val file = File(context.cacheDir, "incoming_voice_${System.currentTimeMillis()}.m4a")
                     file.writeBytes(audioBytes)
-                    voiceMessageManager.playVoiceMessage(
-                        VoiceMessage(audioUrl = file.absolutePath, senderName = "Parent")
-                    )
+                    withContext(Dispatchers.Main) {
+                        voiceMessageManager.playVoiceMessage(
+                            VoiceMessage(audioUrl = file.absolutePath, senderName = "Parent")
+                        )
+                    }
                 } catch (e: Exception) {
                     Timber.e(e, "Error processing incoming voice note")
                 }
@@ -250,23 +256,29 @@ class KidSeeStateManager(
                 try {
                     val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
                     val target = ((level * max) / 100).coerceIn(0, max)
-                    val currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, AudioManager.FLAG_SHOW_UI)
-                    val diff = target - currentVol
-                    if (diff > 0) {
-                        repeat(diff.coerceAtMost(25)) {
-                            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-                            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-                        }
-                    } else if (diff < 0) {
-                        repeat((-diff).coerceAtMost(25)) {
-                            audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
-                            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
-                        }
-                    }
+                    try {
+                        audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, target, AudioManager.FLAG_SHOW_UI)
+                    } catch (_: Exception) {}
                     Timber.d("Direct audioManager set volume to $target / $max ($level%)")
                 } catch (e: Exception) {
                     Timber.e(e, "Failed to set volume via audioManager")
+                    // Fallback to step adjustments
+                    try {
+                        val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                        val target = ((level * max) / 100).coerceIn(0, max)
+                        val current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+                        val diff = target - current
+                        if (diff > 0) {
+                            repeat(diff) {
+                                audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+                            }
+                        } else if (diff < 0) {
+                            repeat(-diff) {
+                                audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+                            }
+                        }
+                    } catch (_: Exception) {}
                 }
                 mediaService?.setVolume(level)
                 val current = _currentDeviceState.value

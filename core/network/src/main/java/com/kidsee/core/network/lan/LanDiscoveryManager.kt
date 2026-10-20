@@ -94,6 +94,7 @@ class LanDiscoveryManager(
     private var activeDeviceProvider: (() -> ChildDevice?)? = null
     private var activeFrameProvider: (() -> ByteArray?)? = null
     var onVoiceMessageReceived: ((ByteArray) -> Unit)? = null
+    var onCommandReceived: ((DeviceCommand) -> Unit)? = null
 
     fun setFrameProvider(provider: () -> ByteArray?) {
         activeFrameProvider = provider
@@ -307,35 +308,40 @@ class LanDiscoveryManager(
         }
     }
 
+    private fun readAsciiLine(input: java.io.InputStream): String? {
+        val sb = StringBuilder()
+        while (true) {
+            val b = input.read()
+            if (b == -1) {
+                return if (sb.isNotEmpty()) sb.toString() else null
+            }
+            if (b == '\n'.code) {
+                break
+            }
+            if (b != '\r'.code) {
+                sb.append(b.toChar())
+            }
+        }
+        return sb.toString()
+    }
+
     private fun handleChildIncomingConnection(socket: Socket) {
         try {
-            socket.soTimeout = 4000
+            socket.soTimeout = 3000
             val rawInput = BufferedInputStream(socket.getInputStream())
             val output = socket.getOutputStream()
 
-            // Read headers byte-by-byte until \r\n\r\n or \n\n without consuming ANY body bytes
-            val headerBytes = ByteArrayOutputStream()
-            var prev3 = -1
-            var prev2 = -1
-            var prev1 = -1
-            while (true) {
-                val b = rawInput.read()
-                if (b == -1) break
-                headerBytes.write(b)
-                if (prev2 == '\r'.code && prev1 == '\n'.code && prev3 == '\r'.code && b == '\n'.code) {
-                    break
-                }
-                if (prev1 == '\n'.code && b == '\n'.code) {
-                    break
-                }
-                prev3 = prev2
-                prev2 = prev1
-                prev1 = b
-            }
+            val firstLine = readAsciiLine(rawInput)?.trim() ?: return
+            if (firstLine.isBlank()) return
 
-            val headerString = headerBytes.toString("UTF-8")
-            val headerLines = headerString.lines()
-            val firstLine = headerLines.firstOrNull()?.trim() ?: return
+            var contentLength = 0
+            while (true) {
+                val header = readAsciiLine(rawInput) ?: break
+                if (header.isEmpty()) break
+                if (header.startsWith("Content-Length:", ignoreCase = true)) {
+                    contentLength = header.substringAfter(":").trim().toIntOrNull() ?: 0
+                }
+            }
 
             when {
                 // HTTP GET /kidsee/screen (Live screen frame stream)
@@ -380,9 +386,6 @@ class LanDiscoveryManager(
 
                 // HTTP POST /kidsee/voice (Direct voice note from parent)
                 firstLine.startsWith("POST /kidsee/voice") -> {
-                    val contentLength = headerLines.find { it.lowercase().startsWith("content-length:") }
-                        ?.substringAfter(":")?.trim()?.toIntOrNull() ?: 0
-
                     if (contentLength > 0) {
                         val audioBuffer = ByteArray(contentLength)
                         var readTotal = 0
@@ -414,9 +417,6 @@ class LanDiscoveryManager(
 
                 // HTTP POST /kidsee/command (or /command)
                 firstLine.startsWith("POST") -> {
-                    val contentLength = headerLines.find { it.lowercase().startsWith("content-length:") }
-                        ?.substringAfter(":")?.trim()?.toIntOrNull() ?: 0
-
                     if (contentLength > 0) {
                         val bodyBytes = ByteArray(contentLength)
                         var readTotal = 0
@@ -429,6 +429,7 @@ class LanDiscoveryManager(
                         try {
                             val command = json.decodeFromString<DeviceCommand>(bodyString)
                             _incomingCommandsFlow.tryEmit(command)
+                            onCommandReceived?.invoke(command)
                             val okBytes = """{"status":"ok"}""".toByteArray(Charsets.UTF_8)
                             val response = "HTTP/1.1 200 OK\r\n" +
                                     "Content-Type: application/json; charset=utf-8\r\n" +

@@ -31,6 +31,21 @@ class VoiceMessageManager(private val context: Context) {
     fun playVoiceMessage(message: VoiceMessage, onFinished: () -> Unit = {}) {
         Timber.d("Playing voice message from ${message.senderName}")
 
+        // Ensure volume is audible for incoming voice note
+        try {
+            val maxVol = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+            val currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+            if (currentVol < maxVol / 3) {
+                audioManager.setStreamVolume(
+                    AudioManager.STREAM_MUSIC,
+                    (maxVol / 2).coerceAtLeast(1),
+                    0
+                )
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "Could not adjust volume for voice message playback")
+        }
+
         // 1. Request audio focus to duck/pause media playback
         val focusRequest = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)

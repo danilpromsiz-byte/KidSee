@@ -131,10 +131,10 @@ class MainActivity : AppCompatActivity() {
         var pinExpectedValue by remember { mutableStateOf<String?>(null) }
         var pinSuccessCallback by remember { mutableStateOf<((String) -> Unit)?>(null) }
 
-        fun changeLanguage(langCode: String) {
+        fun changeLanguage(langCode: String, recreateActivity: Boolean = true) {
             scope.launch {
                 repository.saveLanguage(langCode)
-                LocaleHelper.applyLanguage(this@MainActivity, langCode, recreateActivity = true)
+                LocaleHelper.applyLanguage(this@MainActivity, langCode, recreateActivity = recreateActivity)
             }
         }
 
@@ -247,9 +247,12 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        LaunchedEffect(roleState) {
+        LaunchedEffect(roleState, isSetupComplete) {
             if (roleState == UserRole.PARENT) {
                 app.stateManager.lanDiscoveryManager.startListening()
+                app.stateManager.lanDiscoveryManager.rescan()
+            } else if (roleState == UserRole.CHILD) {
+                app.stateManager.startChildServices()
             }
         }
 
@@ -263,7 +266,7 @@ class MainActivity : AppCompatActivity() {
             OnboardingScreen(
                 currentLanguage = currentLanguage,
                 onLanguageChanged = { langCode ->
-                    changeLanguage(langCode)
+                    changeLanguage(langCode, recreateActivity = false)
                 },
                 onRoleSelected = { role ->
                     scope.launch {
@@ -285,7 +288,10 @@ class MainActivity : AppCompatActivity() {
             if (!isSetupComplete) {
                 ChildSetupScreen(
                     onSetupComplete = {
-                        scope.launch { repository.completeSetup() }
+                        scope.launch {
+                            repository.completeSetup()
+                            app.stateManager.startChildServices()
+                        }
                     }
                 )
             } else {
@@ -339,6 +345,11 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     ParentDashboardScreen(
                         devicesFlow = familyDevicesFlow,
+                        currentFamilyId = familyId,
+                        onAdoptDevice = { device ->
+                            sendCommand(device.id, CommandType.SET_FAMILY, familyId)
+                            Toast.makeText(this@MainActivity, "Устройство ${device.name} привязано к семье!", Toast.LENGTH_SHORT).show()
+                        },
                         onDeviceClick = { device -> selectedDevice = device },
                         onDevicePipClick = { device ->
                             selectedDevice = device

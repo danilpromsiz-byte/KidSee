@@ -158,6 +158,15 @@ private fun LanguageSelectionStep(
         Triple("fr", "Français", "🇫🇷")
     )
 
+    // Dynamic localized strings that update instantly upon language click
+    val (titleText, subtitleText, continueButtonText) = when (selectedLang) {
+        "uk" -> Triple("Оберіть мову", "Мова інтерфейсу додатка", "Продовжити")
+        "en" -> Triple("Select Language", "Application interface language", "Continue")
+        "es" -> Triple("Selecciona el idioma", "Idioma de la interfaz de la aplicación", "Continuar")
+        "fr" -> Triple("Choisissez la langue", "Langue de l'interface de l'application", "Continuer")
+        else -> Triple("Выберите язык", "Язык интерфейса приложения", "Продолжить")
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -182,7 +191,7 @@ private fun LanguageSelectionStep(
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "Выберите язык / Select language",
+            text = titleText,
             style = KidSeeTypography.titleMedium.copy(
                 fontWeight = FontWeight.Bold,
                 color = WazeTextPrimary
@@ -191,7 +200,7 @@ private fun LanguageSelectionStep(
         )
 
         Text(
-            text = "Язык интерфейса приложения",
+            text = subtitleText,
             style = KidSeeTypography.bodyMedium.copy(color = WazeTextSecondary),
             textAlign = TextAlign.Center
         )
@@ -205,6 +214,7 @@ private fun LanguageSelectionStep(
             for ((code, name, flag) in languages) {
                 val isSelected = selectedLang == code
                 KidSeeCard(
+                    cornerRadius = 20.dp,
                     backgroundColor = if (isSelected) WazeBlueLight else Color.White,
                     borderColor = if (isSelected) WazeBlue else WazeBorder,
                     elevation = if (isSelected) 6.dp else 2.dp,
@@ -253,7 +263,7 @@ private fun LanguageSelectionStep(
         Spacer(modifier = Modifier.height(32.dp))
 
         KidSeePillButton(
-            text = "Продолжить",
+            text = continueButtonText,
             onClick = onContinue,
             modifier = Modifier.fillMaxWidth()
         )

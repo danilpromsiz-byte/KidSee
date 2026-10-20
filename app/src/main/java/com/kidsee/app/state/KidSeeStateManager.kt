@@ -72,6 +72,31 @@ class KidSeeStateManager(
     fun startChildServices() {
         stopChildServices()
 
+        scope.launch {
+            val deviceId = repository.deviceIdFlow.first()
+            val familyId = repository.familyIdFlow.first()
+            val deviceType = detectDeviceType()
+            val batteryInfo = getBatteryInfo()
+            val initialDevice = ChildDevice(
+                id = deviceId,
+                familyId = familyId,
+                name = Build.MODEL,
+                deviceType = deviceType,
+                status = if (isScreenLocked) DeviceStatus.LOCKED else DeviceStatus.ONLINE,
+                currentPackage = currentPackage,
+                currentAppLabel = currentAppLabel,
+                isVideoPlaying = isVideo,
+                isAudioPlaying = false,
+                currentVolume = 50,
+                isScreenLocked = isScreenLocked,
+                lastSeenTimestamp = System.currentTimeMillis(),
+                batteryPercent = batteryInfo.first,
+                isCharging = batteryInfo.second
+            )
+            _currentDeviceState.value = initialDevice
+            lanDiscoveryManager.broadcastDevice(initialDevice)
+        }
+
         // 0. Start LAN broadcasting of child state
         lanDiscoveryManager.startBroadcasting { _currentDeviceState.value }
 
@@ -184,6 +209,39 @@ class KidSeeStateManager(
             }
             CommandType.VOLUME_UP -> mediaService?.changeVolumeBy(1)
             CommandType.VOLUME_DOWN -> mediaService?.changeVolumeBy(-1)
+            CommandType.SET_FAMILY -> {
+                val newFamilyId = command.payload?.trim() ?: ""
+                if (newFamilyId.isNotBlank()) {
+                    scope.launch {
+                        repository.saveFamilyId(newFamilyId)
+                        val current = _currentDeviceState.value
+                        if (current != null) {
+                            val updated = current.copy(familyId = newFamilyId)
+                            _currentDeviceState.value = updated
+                            repository.updateDeviceStatus(updated)
+                        }
+                        Timber.d("Child family ID updated to $newFamilyId")
+                    }
+                }
+            }
+            CommandType.CUSTOM -> {
+                val payload = command.payload
+                if (payload != null && payload.startsWith("SET_FAMILY:")) {
+                    val newFamilyId = payload.removePrefix("SET_FAMILY:").trim()
+                    if (newFamilyId.isNotBlank()) {
+                        scope.launch {
+                            repository.saveFamilyId(newFamilyId)
+                            val current = _currentDeviceState.value
+                            if (current != null) {
+                                val updated = current.copy(familyId = newFamilyId)
+                                _currentDeviceState.value = updated
+                                repository.updateDeviceStatus(updated)
+                            }
+                            Timber.d("Child family ID updated to $newFamilyId")
+                        }
+                    }
+                }
+            }
             else -> {}
         }
     }

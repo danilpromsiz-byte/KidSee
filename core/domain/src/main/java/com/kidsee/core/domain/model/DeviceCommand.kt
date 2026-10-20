@@ -15,7 +15,9 @@ enum class CommandType {
     VOLUME_DOWN,
     START_STREAM,
     STOP_STREAM,
-    PLAY_VOICE_MESSAGE
+    PLAY_VOICE_MESSAGE,
+    SET_FAMILY,
+    CUSTOM
 }
 
 @Serializable

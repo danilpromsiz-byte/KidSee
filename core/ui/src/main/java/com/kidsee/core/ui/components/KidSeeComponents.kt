@@ -7,6 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,7 +57,7 @@ import com.kidsee.core.ui.theme.WazeTextPrimary
 import com.kidsee.core.ui.theme.WazeTextSecondary
 
 /**
- * Waze signature pill-shaped button with bouncy tactile feel.
+ * Waze signature pill-shaped button with bouncy tactile feel and TV focus outline.
  */
 @Composable
 fun KidSeePillButton(
@@ -71,26 +72,34 @@ fun KidSeePillButton(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
+    val isFocused by interactionSource.collectIsFocusedAsState()
+
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.96f else 1.0f,
+        targetValue = if (isPressed) 0.96f else if (isFocused) 1.05f else 1.0f,
         animationSpec = spring(dampingRatio = 0.6f, stiffness = 400f),
         label = "btn_scale"
     )
 
+    val shape = RoundedCornerShape(percent = 50)
+
     Surface(
         onClick = onClick,
         enabled = enabled,
-        shape = RoundedCornerShape(percent = 50),
+        shape = shape,
         color = if (enabled) backgroundColor else backgroundColor.copy(alpha = 0.5f),
         contentColor = contentColor,
-        shadowElevation = if (isPressed) 2.dp else 6.dp,
+        border = if (isFocused) {
+            BorderStroke(3.5.dp, if (backgroundColor == Color.White) WazeBlue else Color.White)
+        } else null,
+        shadowElevation = if (isFocused) 10.dp else if (isPressed) 2.dp else 6.dp,
         interactionSource = interactionSource,
         modifier = modifier
             .scale(scale)
             .height(height)
+            .clip(shape)
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 32.dp, vertical = 8.dp),
+            modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
@@ -113,7 +122,7 @@ fun KidSeePillButton(
 }
 
 /**
- * Waze-style rounded modular card with friendly shadow and border.
+ * Waze-style rounded modular card with friendly shadow, border, and TV focus glow.
  */
 @Composable
 fun KidSeeCard(
@@ -125,19 +134,54 @@ fun KidSeeCard(
     onClick: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
-    Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .then(
-                if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier
+    val interactionSource = remember { MutableInteractionSource() }
+    val isFocused by interactionSource.collectIsFocusedAsState()
+    val isPressed by interactionSource.collectIsPressedAsState()
+
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.98f else if (isFocused) 1.03f else 1.0f,
+        label = "card_scale"
+    )
+
+    val shape = RoundedCornerShape(cornerRadius)
+
+    if (onClick != null) {
+        Surface(
+            onClick = onClick,
+            shape = shape,
+            color = backgroundColor,
+            border = BorderStroke(
+                width = if (isFocused) 3.5.dp else 1.5.dp,
+                color = if (isFocused) WazeBlue else borderColor
             ),
-        shape = RoundedCornerShape(cornerRadius),
-        color = backgroundColor,
-        border = BorderStroke(1.5.dp, borderColor),
-        shadowElevation = elevation
-    ) {
-        Box(modifier = Modifier.padding(16.dp)) {
-            content()
+            shadowElevation = if (isFocused) 10.dp else elevation,
+            interactionSource = interactionSource,
+            modifier = modifier
+                .fillMaxWidth()
+                .scale(scale)
+                .clip(shape)
+        ) {
+            Box(modifier = Modifier.padding(16.dp)) {
+                content()
+            }
+        }
+    } else {
+        Surface(
+            shape = shape,
+            color = backgroundColor,
+            border = BorderStroke(
+                width = if (isFocused) 3.5.dp else 1.5.dp,
+                color = if (isFocused) WazeBlue else borderColor
+            ),
+            shadowElevation = if (isFocused) 10.dp else elevation,
+            modifier = modifier
+                .fillMaxWidth()
+                .scale(scale)
+                .clip(shape)
+        ) {
+            Box(modifier = Modifier.padding(16.dp)) {
+                content()
+            }
         }
     }
 }

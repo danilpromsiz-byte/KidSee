@@ -38,6 +38,8 @@ import com.kidsee.core.ui.theme.KidSeeTypography
 import com.kidsee.core.ui.theme.WazeBlue
 import com.kidsee.core.ui.theme.WazeGreen
 import com.kidsee.core.ui.theme.WazeGreenLight
+import com.kidsee.core.ui.theme.WazeOrange
+import com.kidsee.core.ui.theme.WazeOrangeLight
 import com.kidsee.core.ui.theme.WazeTextSecondary
 import com.kidsee.core.ui.theme.WazeWarmWhite
 
@@ -90,29 +92,45 @@ fun ChildActiveScreen(
 
         Spacer(modifier = Modifier.height(28.dp))
 
-        KidSeeStatusBadge(
-            statusText = stringResource(R.string.status_online),
-            backgroundColor = WazeGreenLight,
-            textColor = WazeGreen
-        )
+        val isDefaultFamily = device?.familyId.isNullOrEmpty() || device?.familyId == "KID-7777"
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            KidSeeStatusBadge(
+                statusText = stringResource(R.string.status_online),
+                backgroundColor = WazeGreenLight,
+                textColor = WazeGreen
+            )
+
+            Surface(
+                shape = RoundedCornerShape(percent = 50),
+                color = if (isDefaultFamily) WazeOrangeLight else WazeBlue.copy(alpha = 0.12f)
+            ) {
+                Text(
+                    text = if (isDefaultFamily) "📡 Готов к подключению" else "Код семьи: ${device?.familyId}",
+                    style = KidSeeTypography.labelMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = if (isDefaultFamily) WazeOrange else WazeBlue
+                    ),
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        Surface(
-            shape = RoundedCornerShape(percent = 50),
-            color = WazeBlue.copy(alpha = 0.1f)
-        ) {
+        if (isDefaultFamily) {
             Text(
-                text = "Код семьи: ${device?.familyId?.ifEmpty { "KID-7777" } ?: "KID-7777"}",
-                style = KidSeeTypography.labelMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = WazeBlue
-                ),
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+                text = "Откройте KidSee на устройстве родителя в этой же Wi-Fi сети для подключения",
+                style = KidSeeTypography.bodySmall.copy(color = WazeTextSecondary),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         // Protection summary card
         KidSeeCard(elevation = 3.dp) {

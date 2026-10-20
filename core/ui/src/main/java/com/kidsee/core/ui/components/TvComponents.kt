@@ -2,8 +2,6 @@ package com.kidsee.core.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Box
@@ -15,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
@@ -41,23 +40,22 @@ fun TvFocusableCard(
         label = "tv_card_scale"
     )
 
+    val shape = RoundedCornerShape(cornerRadius)
+
     Surface(
-        modifier = modifier
-            .fillMaxWidth()
-            .scale(scale)
-            .focusable(interactionSource = interactionSource)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                onClick = onClick
-            ),
-        shape = RoundedCornerShape(cornerRadius),
+        onClick = onClick,
+        shape = shape,
         color = WazeCardBg,
         border = BorderStroke(
             width = if (isFocused) 3.5.dp else 1.5.dp,
             color = if (isFocused) WazeBlue else WazeBorder
         ),
-        shadowElevation = if (isFocused) 12.dp else 4.dp
+        shadowElevation = if (isFocused) 12.dp else 4.dp,
+        interactionSource = interactionSource,
+        modifier = modifier
+            .fillMaxWidth()
+            .scale(scale)
+            .clip(shape)
     ) {
         Box(modifier = Modifier.padding(16.dp)) {
             content()

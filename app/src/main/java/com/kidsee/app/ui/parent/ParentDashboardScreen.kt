@@ -79,6 +79,8 @@ fun ParentDashboardScreen(
     onRescanClick: () -> Unit = {},
     onLockClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
+    currentFamilyId: String = "KID-7777",
+    onAdoptDevice: ((ChildDevice) -> Unit)? = null,
     isTv: Boolean = false
 ) {
     val devices by devicesFlow.collectAsState(initial = emptyList())
@@ -175,6 +177,8 @@ fun ParentDashboardScreen(
                             TvFocusableCard(onClick = { onDeviceClick(device) }) {
                                 DeviceCardContent(
                                     device = device,
+                                    currentFamilyId = currentFamilyId,
+                                    onAdoptClick = onAdoptDevice?.let { { it(device) } },
                                     onPipClick = { onDevicePipClick(device) },
                                     onLockClick = { onLockToggle(device) }
                                 )
@@ -186,6 +190,8 @@ fun ParentDashboardScreen(
                             ) {
                                 DeviceCardContent(
                                     device = device,
+                                    currentFamilyId = currentFamilyId,
+                                    onAdoptClick = onAdoptDevice?.let { { it(device) } },
                                     onPipClick = { onDevicePipClick(device) },
                                     onLockClick = { onLockToggle(device) }
                                 )
@@ -214,6 +220,8 @@ fun ParentDashboardScreen(
 @Composable
 private fun DeviceCardContent(
     device: ChildDevice,
+    currentFamilyId: String,
+    onAdoptClick: (() -> Unit)?,
     onPipClick: () -> Unit,
     onLockClick: () -> Unit
 ) {
@@ -290,6 +298,41 @@ private fun DeviceCardContent(
                     backgroundColor = Color(0xFFF0F0F0),
                     textColor = Color(0xFF888888)
                 )
+            }
+        }
+
+        // New / Unpaired LAN Device Banner with 1-click Link button
+        if (device.familyId != currentFamilyId) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(WazeOrangeLight, RoundedCornerShape(10.dp))
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "📡 Обнаружено в Wi-Fi",
+                    style = KidSeeTypography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = WazeOrange
+                    )
+                )
+                if (onAdoptClick != null) {
+                    TextButton(
+                        onClick = onAdoptClick,
+                        modifier = Modifier.height(30.dp)
+                    ) {
+                        Text(
+                            text = "+ Привязать к семье",
+                            style = KidSeeTypography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = WazeBlue
+                            )
+                        )
+                    }
+                }
             }
         }
 

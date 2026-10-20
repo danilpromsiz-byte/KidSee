@@ -30,6 +30,10 @@ import java.util.concurrent.ConcurrentHashMap
 /**
  * Handles zero-config local Wi-Fi / LAN discovery and real-time commands
  * without needing any external cloud or Firebase connection.
+ *
+ * Utilizes dual sockets (listening on 42542 and dedicated sender socket),
+ * subnet broadcast, and local /24 subnet unicast ping sweep to bypass
+ * any router broadcast filters or AP isolation.
  */
 class LanDiscoveryManager(
     private val context: Context
@@ -45,7 +49,11 @@ class LanDiscoveryManager(
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val json = Json { ignoreUnknownKeys = true }
 
-    private var socket: DatagramSocket? = null
+    // Dedicated listening socket (bound to port 42542, solely for receive())
+    private var listenSocket: DatagramSocket? = null
+    // Dedicated sending socket (ephemeral port, solely for sendto())
+    private var senderSocket: DatagramSocket? = null
+
     private var multicastLock: WifiManager.MulticastLock? = null
     private var listenJob: Job? = null
     private var broadcastJob: Job? = null
@@ -66,32 +74,18 @@ class LanDiscoveryManager(
 
     @Synchronized
     fun startListening() {
-        if (isRunning && socket != null && socket?.isClosed == false) return
+        if (isRunning && listenSocket != null && listenSocket?.isClosed == false) return
         isRunning = true
 
         acquireMulticastLock()
-
-        try {
-            socket = DatagramSocket(null).apply {
-                reuseAddress = true
-                bind(InetSocketAddress(DISCOVERY_PORT))
-                broadcast = true
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Failed to bind DatagramSocket on port $DISCOVERY_PORT")
-            try {
-                socket = DatagramSocket(DISCOVERY_PORT).apply { broadcast = true }
-            } catch (e2: Exception) {
-                Timber.e(e2, "Fallback socket bind failed")
-            }
-        }
+        initSockets()
 
         listenJob?.cancel()
         listenJob = scope.launch {
-            val buffer = ByteArray(4096)
+            val buffer = ByteArray(8192)
             while (isActive && isRunning) {
                 try {
-                    val s = socket ?: break
+                    val s = listenSocket ?: break
                     val packet = DatagramPacket(buffer, buffer.size)
                     s.receive(packet)
 
@@ -105,13 +99,13 @@ class LanDiscoveryManager(
                         text.startsWith(PREFIX_PING) -> {
                             // Peer is asking for active devices
                             val dev = activeDeviceProvider?.invoke()
-                            if (dev != null) {
+                            if (dev != null && dev.id.isNotBlank()) {
                                 val payload = PREFIX_DEVICE + json.encodeToString(dev)
-                                // Reply via direct unicast to the sender
+                                // Reply directly via unicast to sender at DISCOVERY_PORT
                                 if (senderAddress != null) {
-                                    sendDirectUdpPacket(payload, senderAddress, packet.port)
+                                    sendDirectUdpPacket(payload, senderAddress, DISCOVERY_PORT)
                                 }
-                                // Also broadcast
+                                // Also broadcast locally
                                 sendUdpPacket(payload)
                             }
                         }
@@ -120,7 +114,9 @@ class LanDiscoveryManager(
                             val payload = text.removePrefix(PREFIX_DEVICE)
                             try {
                                 val device = json.decodeFromString<ChildDevice>(payload)
-                                if (device.id.isNotBlank()) {
+                                val selfId = activeDeviceProvider?.invoke()?.id
+                                // Ignore packet if it came from this same device
+                                if (device.id.isNotBlank() && device.id != selfId) {
                                     val now = System.currentTimeMillis()
                                     val updatedDevice = device.copy(lastSeenTimestamp = now)
                                     discoveredDevices[device.id] = updatedDevice
@@ -164,15 +160,58 @@ class LanDiscoveryManager(
         }
     }
 
+    private fun initSockets() {
+        try {
+            if (listenSocket == null || listenSocket?.isClosed == true) {
+                listenSocket = DatagramSocket(null).apply {
+                    reuseAddress = true
+                    bind(InetSocketAddress(DISCOVERY_PORT))
+                    broadcast = true
+                }
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to bind listenSocket on port $DISCOVERY_PORT")
+            try {
+                listenSocket = DatagramSocket(DISCOVERY_PORT).apply { broadcast = true }
+            } catch (e2: Exception) {
+                Timber.e(e2, "Fallback listenSocket bind failed")
+            }
+        }
+
+        try {
+            if (senderSocket == null || senderSocket?.isClosed == true) {
+                senderSocket = DatagramSocket().apply { broadcast = true }
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Failed to create senderSocket")
+        }
+    }
+
     /**
-     * Triggers active rescan by broadcasting discovery ping probes across all interfaces.
+     * Triggers active rescan by broadcasting discovery ping probes across all interfaces
+     * and sweeping the local /24 Wi-Fi subnet.
      */
     fun rescan() {
         startListening()
         scope.launch {
-            repeat(3) {
+            // 1. Broadcast pings
+            repeat(2) {
                 sendUdpPacket(PREFIX_PING)
-                delay(120L)
+                delay(80L)
+            }
+
+            // 2. Unicast sweep across local /24 subnet (essential if router blocks broadcast)
+            val prefix = getSubnetBasePrefix()
+            if (prefix != null) {
+                val pingData = PREFIX_PING.toByteArray(Charsets.UTF_8)
+                val s = senderSocket ?: return@launch
+                for (i in 1..254) {
+                    try {
+                        val target = InetAddress.getByName("$prefix.$i")
+                        s.send(DatagramPacket(pingData, pingData.size, target, DISCOVERY_PORT))
+                    } catch (_: Exception) {}
+                }
+                Timber.d("Completed LAN subnet sweep for $prefix.1..254")
             }
         }
     }
@@ -186,10 +225,17 @@ class LanDiscoveryManager(
 
         broadcastJob?.cancel()
         broadcastJob = scope.launch {
+            // Send initial ping sweep and broadcast to announce presence immediately
+            val dev = deviceProvider()
+            if (dev != null) {
+                broadcastDevice(dev)
+            }
+            rescan()
+
             while (isActive && isRunning) {
-                val dev = deviceProvider()
-                if (dev != null) {
-                    broadcastDevice(dev)
+                val currentDev = deviceProvider()
+                if (currentDev != null) {
+                    broadcastDevice(currentDev)
                 }
                 delay(2_500L)
             }
@@ -201,7 +247,7 @@ class LanDiscoveryManager(
             try {
                 val payload = PREFIX_DEVICE + json.encodeToString(device)
                 sendUdpPacket(payload)
-                // Also send direct unicast to any known parent addresses
+                // Also send direct unicast to all known peer addresses
                 for (peer in knownPeerAddresses) {
                     sendDirectUdpPacket(payload, peer, DISCOVERY_PORT)
                 }
@@ -226,18 +272,68 @@ class LanDiscoveryManager(
         }
     }
 
+    private fun getSubnetBasePrefix(): String? {
+        try {
+            val wifi = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+            val dhcp = wifi?.dhcpInfo
+            if (dhcp != null && dhcp.ipAddress != 0) {
+                val ip = dhcp.ipAddress
+                val b0 = ip and 0xFF
+                val b1 = (ip shr 8) and 0xFF
+                val b2 = (ip shr 16) and 0xFF
+                return "$b0.$b1.$b2"
+            }
+
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces() ?: return null
+            while (interfaces.hasMoreElements()) {
+                val iface = interfaces.nextElement()
+                if (iface.isLoopback) continue
+                for (addr in iface.inetAddresses) {
+                    if (addr is java.net.Inet4Address && !addr.isLoopbackAddress) {
+                        val host = addr.hostAddress ?: continue
+                        val parts = host.split(".")
+                        if (parts.size == 4) {
+                            return "${parts[0]}.${parts[1]}.${parts[2]}"
+                        }
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "Could not determine subnet prefix")
+        }
+        return null
+    }
+
     private fun getBroadcastAddresses(): List<InetAddress> {
         val list = mutableListOf<InetAddress>()
         try {
+            // 1. Always include standard 255.255.255.255
             list.add(InetAddress.getByName(BROADCAST_IP))
-            val interfaces = java.net.NetworkInterface.getNetworkInterfaces() ?: return list
-            while (interfaces.hasMoreElements()) {
-                val iface = interfaces.nextElement()
-                if (iface.isLoopback || !iface.isUp) continue
-                for (ifAddr in iface.interfaceAddresses) {
-                    val bcast = ifAddr.broadcast
-                    if (bcast != null && !list.contains(bcast)) {
-                        list.add(bcast)
+
+            // 2. Wi-Fi DHCP calculated subnet broadcast
+            val wifi = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+            val dhcp = wifi?.dhcpInfo
+            if (dhcp != null && dhcp.ipAddress != 0) {
+                val broadcast = (dhcp.ipAddress and dhcp.netmask) or dhcp.netmask.inv()
+                val quads = ByteArray(4)
+                for (k in 0..3) {
+                    quads[k] = ((broadcast shr (k * 8)) and 0xFF).toByte()
+                }
+                val bcastAddr = InetAddress.getByAddress(quads)
+                if (!list.contains(bcastAddr)) list.add(bcastAddr)
+            }
+
+            // 3. NetworkInterface interfaceAddresses
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces()
+            if (interfaces != null) {
+                while (interfaces.hasMoreElements()) {
+                    val iface = interfaces.nextElement()
+                    if (iface.isLoopback) continue
+                    for (ifAddr in iface.interfaceAddresses) {
+                        val bcast = ifAddr.broadcast
+                        if (bcast != null && !list.contains(bcast)) {
+                            list.add(bcast)
+                        }
                     }
                 }
             }
@@ -251,7 +347,7 @@ class LanDiscoveryManager(
         try {
             val data = text.toByteArray(Charsets.UTF_8)
             val packet = DatagramPacket(data, data.size, address, port)
-            val s = socket ?: DatagramSocket().apply { broadcast = true }
+            val s = senderSocket ?: DatagramSocket().apply { broadcast = true }
             s.send(packet)
         } catch (e: Exception) {
             Timber.w(e, "Failed to send direct UDP packet to $address:$port")
@@ -262,7 +358,7 @@ class LanDiscoveryManager(
         try {
             val data = text.toByteArray(Charsets.UTF_8)
             val addresses = getBroadcastAddresses()
-            val s = socket ?: DatagramSocket().apply { broadcast = true }
+            val s = senderSocket ?: DatagramSocket().apply { broadcast = true }
 
             for (addr in addresses) {
                 try {
@@ -300,9 +396,14 @@ class LanDiscoveryManager(
         cleanupJob?.cancel()
 
         try {
-            socket?.close()
+            listenSocket?.close()
         } catch (_: Exception) {}
-        socket = null
+        listenSocket = null
+
+        try {
+            senderSocket?.close()
+        } catch (_: Exception) {}
+        senderSocket = null
 
         try {
             if (multicastLock?.isHeld == true) {

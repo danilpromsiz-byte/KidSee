@@ -1,5 +1,6 @@
 package com.kidsee.app
 
+import android.Manifest
 import android.app.Activity
 import android.app.PendingIntent
 import android.app.PictureInPictureParams
@@ -9,6 +10,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -24,6 +26,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.ContextCompat
+import com.kidsee.app.service.KidSeeChildService
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -109,6 +113,16 @@ class MainActivity : AppCompatActivity() {
                 startService(serviceIntent)
             }
             Toast.makeText(this, R.string.screen_stream_started_toast, Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private val recordAudioLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            Toast.makeText(this, R.string.mic_permission_granted, Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, R.string.mic_permission_denied, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -339,10 +353,21 @@ class MainActivity : AppCompatActivity() {
 
             LaunchedEffect(roleState, isSetupComplete) {
                 if (roleState == UserRole.PARENT) {
+                    KidSeeChildService.stop(this@MainActivity)
                     app.stateManager.lanDiscoveryManager.startListening()
                     app.stateManager.lanDiscoveryManager.rescan()
                 } else if (roleState == UserRole.CHILD) {
+                    KidSeeChildService.start(this@MainActivity)
                     app.stateManager.startChildServices()
+                }
+            }
+
+            // Automatically persist all discovered family devices into saved devices history
+            LaunchedEffect(familyId) {
+                app.stateManager.lanDiscoveryManager.discoveredDevicesFlow.collect { list ->
+                    for (d in list) {
+                        repository.saveOrUpdateDevice(d)
+                    }
                 }
             }
 
@@ -431,6 +456,14 @@ class MainActivity : AppCompatActivity() {
                                     Toast.LENGTH_SHORT
                                 ).show()
                             },
+                            onReconnect = {
+                                app.stateManager.lanDiscoveryManager.reconnectDevice(activeDevice.id)
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    localizedContext.getString(R.string.reconnecting_device),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            },
                             onBackClick = { selectedDevice = null },
                             onPipClick = { enterPictureInPicture() },
                             onLockToggle = {
@@ -446,22 +479,28 @@ class MainActivity : AppCompatActivity() {
                                 sendCommand(activeDevice.id, CommandType.VOLUME_SET, vol.toString())
                             },
                             onPushToTalkStart = {
-                                scope.launch {
-                                    voiceMessageManager.startRecording()
+                                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+                                    recordAudioLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                                } else {
+                                    scope.launch {
+                                        voiceMessageManager.startRecording()
+                                    }
                                 }
                             },
                             onPushToTalkStop = {
-                                scope.launch {
-                                    val file = voiceMessageManager.stopRecording()
-                                    if (file != null && file.exists() && file.length() > 0) {
-                                        val bytes = file.readBytes()
-                                        val ok = app.stateManager.lanDiscoveryManager.sendVoiceAudio(activeDevice.id, bytes)
-                                        if (ok) {
-                                            Toast.makeText(
-                                                this@MainActivity,
-                                                localizedContext.getString(R.string.voice_sent_toast),
-                                                Toast.LENGTH_SHORT
-                                            ).show()
+                                if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
+                                    scope.launch {
+                                        val file = voiceMessageManager.stopRecording()
+                                        if (file != null && file.exists() && file.length() > 0) {
+                                            val bytes = file.readBytes()
+                                            val ok = app.stateManager.lanDiscoveryManager.sendVoiceAudio(activeDevice.id, bytes)
+                                            if (ok) {
+                                                Toast.makeText(
+                                                    this@MainActivity,
+                                                    localizedContext.getString(R.string.voice_sent_toast),
+                                                    Toast.LENGTH_SHORT
+                                                ).show()
+                                            }
                                         }
                                     }
                                 }
@@ -484,9 +523,13 @@ class MainActivity : AppCompatActivity() {
                                     repository.removeDevice(device.id)
                                 }
                             },
-                            onDeviceClick = { device -> selectedDevice = device },
+                            onDeviceClick = { device ->
+                                selectedDevice = device
+                                scope.launch { repository.saveOrUpdateDevice(device) }
+                            },
                             onDevicePipClick = { device ->
                                 selectedDevice = device
+                                scope.launch { repository.saveOrUpdateDevice(device) }
                                 enterPictureInPicture()
                             },
                             onLockToggle = { device ->

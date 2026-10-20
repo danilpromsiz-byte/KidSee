@@ -163,6 +163,9 @@ fun ParentDashboardScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            val onlineDevices = devices.filter { it.isOnline }
+            val historyDevices = devices.filter { !it.isOnline }
+
             if (devices.isEmpty()) {
                 // Empty state
                 EmptyDevicesView(
@@ -174,34 +177,89 @@ fun ParentDashboardScreen(
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
-                    items(devices, key = { it.id }) { device ->
-                        if (isTv) {
-                            TvFocusableCard(onClick = { onDeviceClick(device) }) {
-                                DeviceCardContent(
-                                    device = device,
-                                    currentFamilyId = currentFamilyId,
-                                    onAdoptClick = onAdoptDevice?.let { { it(device) } },
-                                    onPipClick = { onDevicePipClick(device) },
-                                    onLockClick = { onLockToggle(device) },
-                                    onDeleteClick = { onDeleteDevice(device) }
-                                )
-                            }
-                        } else {
-                            KidSeeCard(
-                                elevation = 4.dp,
-                                onClick = { onDeviceClick(device) }
-                            ) {
-                                DeviceCardContent(
-                                    device = device,
-                                    currentFamilyId = currentFamilyId,
-                                    onAdoptClick = onAdoptDevice?.let { { it(device) } },
-                                    onPipClick = { onDevicePipClick(device) },
-                                    onLockClick = { onLockToggle(device) },
-                                    onDeleteClick = { onDeleteDevice(device) }
-                                )
+                    if (onlineDevices.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = stringResource(R.string.section_online_devices),
+                                style = KidSeeTypography.titleSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = WazeGreen
+                                ),
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                        items(onlineDevices, key = { it.id }) { device ->
+                            if (isTv) {
+                                TvFocusableCard(onClick = { onDeviceClick(device) }) {
+                                    DeviceCardContent(
+                                        device = device,
+                                        currentFamilyId = currentFamilyId,
+                                        onAdoptClick = onAdoptDevice?.let { { it(device) } },
+                                        onPipClick = { onDevicePipClick(device) },
+                                        onLockClick = { onLockToggle(device) },
+                                        onDeleteClick = { onDeleteDevice(device) }
+                                    )
+                                }
+                            } else {
+                                KidSeeCard(
+                                    elevation = 4.dp,
+                                    onClick = { onDeviceClick(device) }
+                                ) {
+                                    DeviceCardContent(
+                                        device = device,
+                                        currentFamilyId = currentFamilyId,
+                                        onAdoptClick = onAdoptDevice?.let { { it(device) } },
+                                        onPipClick = { onDevicePipClick(device) },
+                                        onLockClick = { onLockToggle(device) },
+                                        onDeleteClick = { onDeleteDevice(device) }
+                                    )
+                                }
                             }
                         }
                     }
+
+                    if (historyDevices.isNotEmpty()) {
+                        item {
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text(
+                                text = stringResource(R.string.section_history_devices),
+                                style = KidSeeTypography.titleSmall.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    color = WazeTextSecondary
+                                ),
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+                        items(historyDevices, key = { it.id }) { device ->
+                            if (isTv) {
+                                TvFocusableCard(onClick = { onDeviceClick(device) }) {
+                                    DeviceCardContent(
+                                        device = device,
+                                        currentFamilyId = currentFamilyId,
+                                        onAdoptClick = onAdoptDevice?.let { { it(device) } },
+                                        onPipClick = { onDeviceClick(device) },
+                                        onLockClick = { onLockToggle(device) },
+                                        onDeleteClick = { onDeleteDevice(device) }
+                                    )
+                                }
+                            } else {
+                                KidSeeCard(
+                                    elevation = 2.dp,
+                                    onClick = { onDeviceClick(device) }
+                                ) {
+                                    DeviceCardContent(
+                                        device = device,
+                                        currentFamilyId = currentFamilyId,
+                                        onAdoptClick = onAdoptDevice?.let { { it(device) } },
+                                        onPipClick = { onDeviceClick(device) },
+                                        onLockClick = { onLockToggle(device) },
+                                        onDeleteClick = { onDeleteDevice(device) }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
                     item {
                         Spacer(modifier = Modifier.height(8.dp))
                         KidSeePillButton(
@@ -395,22 +453,31 @@ private fun DeviceCardContent(
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // PiP Button
-                IconButton(onClick = onPipClick) {
-                    Icon(
-                        imageVector = Icons.Default.PictureInPicture,
-                        contentDescription = stringResource(R.string.pip_button),
-                        tint = WazeBlue
+                if (!device.isOnline) {
+                    KidSeePillButton(
+                        text = stringResource(R.string.btn_quick_connect),
+                        onClick = onPipClick,
+                        backgroundColor = WazeBlue,
+                        height = 32.dp
                     )
-                }
+                } else {
+                    // PiP Button
+                    IconButton(onClick = onPipClick) {
+                        Icon(
+                            imageVector = Icons.Default.PictureInPicture,
+                            contentDescription = stringResource(R.string.pip_button),
+                            tint = WazeBlue
+                        )
+                    }
 
-                // Lock / Unlock Button
-                IconButton(onClick = onLockClick) {
-                    Icon(
-                        imageVector = if (device.isScreenLocked) Icons.Default.LockOpen else Icons.Default.Lock,
-                        contentDescription = stringResource(if (device.isScreenLocked) R.string.btn_unlock else R.string.btn_lock),
-                        tint = if (device.isScreenLocked) WazeGreen else WazeRed
-                    )
+                    // Lock / Unlock Button
+                    IconButton(onClick = onLockClick) {
+                        Icon(
+                            imageVector = if (device.isScreenLocked) Icons.Default.LockOpen else Icons.Default.Lock,
+                            contentDescription = stringResource(if (device.isScreenLocked) R.string.btn_unlock else R.string.btn_lock),
+                            tint = if (device.isScreenLocked) WazeGreen else WazeRed
+                        )
+                    }
                 }
             }
         }

@@ -78,12 +78,29 @@ class KidSeeMediaMonitorService : NotificationListenerService() {
     fun setVolume(percent: Int) {
         val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
         val targetVolume = (percent * maxVolume) / 100
-        audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVolume, AudioManager.FLAG_SHOW_UI)
+        try {
+            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetVolume, AudioManager.FLAG_SHOW_UI)
+        } catch (_: Exception) {}
+        val controllers = getActiveControllers()
+        for (c in controllers) {
+            try {
+                c.setVolumeTo(targetVolume, AudioManager.FLAG_SHOW_UI)
+            } catch (_: Exception) {}
+        }
     }
 
     fun changeVolumeBy(delta: Int) {
         val direction = if (delta > 0) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER
-        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, direction, AudioManager.FLAG_SHOW_UI)
+        try {
+            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, direction, AudioManager.FLAG_SHOW_UI)
+            audioManager.adjustVolume(direction, AudioManager.FLAG_SHOW_UI)
+        } catch (_: Exception) {}
+        val controllers = getActiveControllers()
+        for (c in controllers) {
+            try {
+                c.adjustVolume(direction, AudioManager.FLAG_SHOW_UI)
+            } catch (_: Exception) {}
+        }
     }
 
     fun getCurrentVolumePercent(): Int {

@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PictureInPicture
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.VolumeDown
@@ -61,6 +62,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.kidsee.core.domain.model.ChildDevice
@@ -91,6 +93,7 @@ fun DeviceDetailScreen(
     device: ChildDevice,
     lanDiscoveryManager: LanDiscoveryManager? = null,
     onRequestStream: () -> Unit = {},
+    onReconnect: () -> Unit = {},
     onBackClick: () -> Unit,
     onPipClick: () -> Unit,
     onLockToggle: () -> Unit,
@@ -220,6 +223,16 @@ fun DeviceDetailScreen(
                     text = device.currentAppLabel ?: stringResource(R.string.app_idle),
                     style = KidSeeTypography.bodySmall.copy(color = WazeTextSecondary),
                     maxLines = 1
+                )
+            }
+
+            // Reconnect Device Button
+            IconButton(onClick = onReconnect) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = stringResource(R.string.btn_reconnect),
+                    tint = WazeBlue,
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
@@ -364,45 +377,47 @@ fun DeviceDetailScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Compact Screen Lock Action Bar
+        // Screen Lock Action Card (Text is cleanly placed UNDER the button)
         KidSeeCard(
             backgroundColor = if (device.isScreenLocked) WazeGreenLight else WazeRedLight,
             borderColor = if (device.isScreenLocked) WazeGreen else WazeRed,
             elevation = 2.dp
         ) {
-            Row(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    imageVector = if (device.isScreenLocked) Icons.Default.LockOpen else Icons.Default.Lock,
-                    contentDescription = null,
-                    tint = if (device.isScreenLocked) WazeGreen else WazeRed,
-                    modifier = Modifier.size(24.dp)
-                )
-
-                Spacer(modifier = Modifier.width(10.dp))
-
-                Text(
-                    text = stringResource(
-                        if (device.isScreenLocked) R.string.device_locked_title else R.string.block_screen_now_title
-                    ),
-                    style = KidSeeTypography.titleSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = if (device.isScreenLocked) WazeGreen else WazeRed
-                    ),
-                    modifier = Modifier.weight(1f)
-                )
-
                 KidSeePillButton(
                     text = stringResource(
                         if (device.isScreenLocked) R.string.btn_unlock else R.string.btn_lock
                     ),
                     onClick = onLockToggle,
                     backgroundColor = if (device.isScreenLocked) WazeGreen else WazeRed,
-                    height = 36.dp
+                    icon = {
+                        Icon(
+                            imageVector = if (device.isScreenLocked) Icons.Default.LockOpen else Icons.Default.Lock,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    height = 42.dp
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = stringResource(
+                        if (device.isScreenLocked) R.string.device_locked_title else R.string.block_screen_now_title
+                    ),
+                    style = KidSeeTypography.labelMedium.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (device.isScreenLocked) WazeGreen else WazeRed
+                    ),
+                    textAlign = TextAlign.Center
                 )
             }
         }
@@ -434,7 +449,7 @@ fun DeviceDetailScreen(
             // Push-to-Talk (Hold to speak live to child)
             Box(
                 modifier = Modifier
-                    .weight(1.2f)
+                    .weight(1f)
                     .height(46.dp)
                     .clip(RoundedCornerShape(percent = 50))
                     .background(if (isTalkingLive) WazeGreen else WazePurple)
@@ -451,20 +466,27 @@ fun DeviceDetailScreen(
                     },
                 contentAlignment = Alignment.Center
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
                     Icon(
                         imageVector = Icons.Default.Mic,
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(18.dp)
                     )
-                    Spacer(modifier = Modifier.width(6.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                     Text(
                         text = stringResource(if (isTalkingLive) R.string.status_recording_voice else R.string.btn_hold_to_talk),
-                        style = KidSeeTypography.titleSmall.copy(
+                        style = KidSeeTypography.labelMedium.copy(
                             color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center
+                        ),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }

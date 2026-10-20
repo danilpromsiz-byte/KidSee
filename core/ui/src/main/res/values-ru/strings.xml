@@ -197,9 +197,9 @@
     <string name="status_video_playing">▶ Воспроизводится видео: %1$s</string>
     <string name="audio_muted">Звук выключен</string>
     <string name="audio_on">Звук включен</string>
-    <string name="btn_hear_sound">Включить звук</string>
-    <string name="btn_mute_sound">Выключить звук</string>
-    <string name="btn_hold_to_talk">Удерживайте для связи</string>
+    <string name="btn_hear_sound">Вкл. звук</string>
+    <string name="btn_mute_sound">Без звука</string>
+    <string name="btn_hold_to_talk">Удерживайте</string>
     <string name="status_speaking">Говорите…</string>
     <string name="media_controls_title">Управление видео и медиа</string>
     <string name="btn_prev">Предыдущее</string>
@@ -222,5 +222,18 @@
     <string name="btn_exit_fullscreen">Выйти из полноэкранного режима</string>
     <string name="btn_delete_device">Удалить устройство</string>
     <string name="voice_sent_toast">Голосовое сообщение отправлено</string>
-    <string name="status_recording_voice">Запись…</string>
+    <string name="status_recording_voice">Говорите…</string>
+    <string name="btn_reconnect">Переподключить</string>
+    <string name="btn_quick_connect">Подключить</string>
+    <string name="reconnecting_device">Переподключение к устройству…</string>
+    <string name="section_online_devices">Устройства в сети</string>
+    <string name="section_history_devices">Ранее подключаемые устройства</string>
+    <string name="btn_reconnect_wifi">Переподключить сеть</string>
+    <string name="child_persistent_service_channel">Служба защиты KidSee</string>
+    <string name="child_persistent_service_desc">Поддерживает связь с родителями 24/7</string>
+    <string name="child_persistent_notification_text">Устройство под защитой — В сети</string>
+    <string name="mic_permission_granted">Доступ к микрофону разрешен</string>
+    <string name="mic_permission_denied">В доступе к микрофону отказано</string>
+    <string name="disable_battery_opt_btn">Отключить оптимизацию батареи</string>
+    <string name="disable_battery_opt_desc">Предотвращает закрытие KidSee системой в фоне</string>
 </resources>

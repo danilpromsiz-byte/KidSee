@@ -197,9 +197,9 @@
     <string name="status_video_playing">▶ Lecture vidéo en cours : %1$s</string>
     <string name="audio_muted">Muet</string>
     <string name="audio_on">Audio activé</string>
-    <string name="btn_hear_sound">Écouter le son</string>
-    <string name="btn_mute_sound">Couper le son</string>
-    <string name="btn_hold_to_talk">Maintenez pour parler</string>
+    <string name="btn_hear_sound">Activer</string>
+    <string name="btn_mute_sound">Couper</string>
+    <string name="btn_hold_to_talk">Maintenir</string>
     <string name="status_speaking">Vous parlez…</string>
     <string name="media_controls_title">Contrôle vidéo et multimédia</string>
     <string name="btn_prev">Précédent</string>
@@ -222,5 +222,18 @@
     <string name="btn_exit_fullscreen">Quitter le plein écran</string>
     <string name="btn_delete_device">Supprimer l\'appareil</string>
     <string name="voice_sent_toast">Message vocal envoyé</string>
-    <string name="status_recording_voice">Enregistrement…</string>
+    <string name="status_recording_voice">Vous parlez…</string>
+    <string name="btn_reconnect">Reconnecter</string>
+    <string name="btn_quick_connect">Connecter</string>
+    <string name="reconnecting_device">Reconnexion à l\'appareil…</string>
+    <string name="section_online_devices">Appareils en ligne</string>
+    <string name="section_history_devices">Appareils enregistrés</string>
+    <string name="btn_reconnect_wifi">Reconnecter le réseau</string>
+    <string name="child_persistent_service_channel">Service de protection KidSee</string>
+    <string name="child_persistent_service_desc">Maintient la surveillance active 24/7</string>
+    <string name="child_persistent_notification_text">Protégé par les règles familiales — Connecté</string>
+    <string name="mic_permission_granted">Autorisation du microphone accordée</string>
+    <string name="mic_permission_denied">Autorisation du microphone refusée</string>
+    <string name="disable_battery_opt_btn">Désactiver l\'optimisation de batterie</string>
+    <string name="disable_battery_opt_desc">Empêche Android de fermer KidSee en arrière-plan</string>
 </resources>

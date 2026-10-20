@@ -197,8 +197,8 @@
     <string name="status_video_playing">▶ Video is Playing: %1$s</string>
     <string name="audio_muted">Muted</string>
     <string name="audio_on">Audio ON</string>
-    <string name="btn_hear_sound">Hear Sound</string>
-    <string name="btn_mute_sound">Mute Sound</string>
+    <string name="btn_hear_sound">Unmute</string>
+    <string name="btn_mute_sound">Mute</string>
     <string name="btn_hold_to_talk">Hold to Talk</string>
     <string name="status_speaking">Speaking…</string>
     <string name="media_controls_title">Video &amp; Media Controls</string>
@@ -223,4 +223,17 @@
     <string name="btn_delete_device">Remove Device</string>
     <string name="voice_sent_toast">Voice note sent</string>
     <string name="status_recording_voice">Recording…</string>
+    <string name="btn_reconnect">Reconnect</string>
+    <string name="btn_quick_connect">Connect</string>
+    <string name="reconnecting_device">Reconnecting to device…</string>
+    <string name="section_online_devices">Active Devices Online</string>
+    <string name="section_history_devices">Saved &amp; Previously Connected</string>
+    <string name="btn_reconnect_wifi">Reconnect Network</string>
+    <string name="child_persistent_service_channel">KidSee Protection Service</string>
+    <string name="child_persistent_service_desc">Keeps child monitoring alive 24/7</string>
+    <string name="child_persistent_notification_text">Protected by family rules — Connected</string>
+    <string name="mic_permission_granted">Microphone permission granted</string>
+    <string name="mic_permission_denied">Microphone permission denied</string>
+    <string name="disable_battery_opt_btn">Disable Battery Optimization</string>
+    <string name="disable_battery_opt_desc">Prevents Android from killing KidSee in background</string>
 </resources>

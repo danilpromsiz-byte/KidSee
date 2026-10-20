@@ -36,7 +36,7 @@ class VoiceMessageManager(private val context: Context) {
             AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
                 .setAudioAttributes(
                     AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
                         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                         .build()
                 )
@@ -54,15 +54,24 @@ class VoiceMessageManager(private val context: Context) {
                 setDataSource(message.audioUrl)
                 setAudioAttributes(
                     AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
                         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                         .build()
                 )
+                setVolume(1.0f, 1.0f)
                 setOnCompletionListener {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && focusRequest != null) {
                         audioManager.abandonAudioFocusRequest(focusRequest)
                     }
                     onFinished()
+                }
+                setOnErrorListener { _, what, extra ->
+                    Timber.e("MediaPlayer error playing voice: what=$what, extra=$extra")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && focusRequest != null) {
+                        audioManager.abandonAudioFocusRequest(focusRequest)
+                    }
+                    onFinished()
+                    true
                 }
                 prepareAsync()
                 setOnPreparedListener {

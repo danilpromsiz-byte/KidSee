@@ -250,7 +250,20 @@ class KidSeeStateManager(
                 try {
                     val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
                     val target = ((level * max) / 100).coerceIn(0, max)
+                    val currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
                     audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, AudioManager.FLAG_SHOW_UI)
+                    val diff = target - currentVol
+                    if (diff > 0) {
+                        repeat(diff.coerceAtMost(25)) {
+                            audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+                            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+                        }
+                    } else if (diff < 0) {
+                        repeat((-diff).coerceAtMost(25)) {
+                            audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+                            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+                        }
+                    }
                     Timber.d("Direct audioManager set volume to $target / $max ($level%)")
                 } catch (e: Exception) {
                     Timber.e(e, "Failed to set volume via audioManager")
@@ -266,16 +279,16 @@ class KidSeeStateManager(
             CommandType.VOLUME_UP -> {
                 try {
                     audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-                } catch (_: Exception) {
-                    mediaService?.changeVolumeBy(1)
-                }
+                    audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+                } catch (_: Exception) {}
+                mediaService?.changeVolumeBy(1)
             }
             CommandType.VOLUME_DOWN -> {
                 try {
                     audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
-                } catch (_: Exception) {
-                    mediaService?.changeVolumeBy(-1)
-                }
+                    audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+                } catch (_: Exception) {}
+                mediaService?.changeVolumeBy(-1)
             }
             CommandType.SET_PIN -> {
                 val pin = command.payload?.trim() ?: ""

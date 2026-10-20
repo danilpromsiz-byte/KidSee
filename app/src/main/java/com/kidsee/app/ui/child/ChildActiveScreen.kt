@@ -1,5 +1,11 @@
 package com.kidsee.app.ui.child
 
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.os.PowerManager
+import android.provider.Settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,8 +19,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BatteryAlert
 import androidx.compose.material.icons.filled.Cast
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Icon
@@ -27,11 +35,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.kidsee.app.KidSeeApp
+import com.kidsee.app.service.KidSeeChildService
 import com.kidsee.app.service.ScreenCaptureService
 import com.kidsee.core.domain.model.ChildDevice
 import com.kidsee.core.ui.R
@@ -54,8 +64,17 @@ fun ChildActiveScreen(
     onSettingsClick: () -> Unit = {},
     onStartStreamClick: () -> Unit = {}
 ) {
-    // Automatically prompt for screen streaming permission immediately if not yet running
+    val context = LocalContext.current
+    val powerManager = remember { context.getSystemService(Context.POWER_SERVICE) as? PowerManager }
+    val isIgnoringBatteryOpt = remember {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && powerManager != null) {
+            powerManager.isIgnoringBatteryOptimizations(context.packageName)
+        } else true
+    }
+
+    // Automatically ensure child persistent service and screen capture prompt are running
     LaunchedEffect(Unit) {
+        KidSeeChildService.start(context)
         if (!ScreenCaptureService.isRunning) {
             onStartStreamClick()
         }
@@ -248,6 +267,81 @@ fun ChildActiveScreen(
                 ProtectionItem(title = stringResource(R.string.prot_voice_notes))
             }
         }
+
+        if (!isIgnoringBatteryOpt && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            Spacer(modifier = Modifier.height(14.dp))
+            KidSeeCard(
+                backgroundColor = WazeOrangeLight,
+                borderColor = WazeOrange,
+                elevation = 2.dp
+            ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.BatteryAlert,
+                            contentDescription = null,
+                            tint = WazeOrange,
+                            modifier = Modifier.size(22.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.disable_battery_opt_btn),
+                            style = KidSeeTypography.titleSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = WazeOrange
+                            )
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.disable_battery_opt_desc),
+                        style = KidSeeTypography.bodySmall.copy(color = WazeTextSecondary)
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+                    KidSeePillButton(
+                        text = stringResource(R.string.disable_battery_opt_btn),
+                        onClick = {
+                            try {
+                                val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                                    data = Uri.parse("package:${context.packageName}")
+                                }
+                                context.startActivity(intent)
+                            } catch (_: Exception) {
+                                try {
+                                    context.startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS))
+                                } catch (_: Exception) {}
+                            }
+                        },
+                        backgroundColor = WazeOrange,
+                        height = 36.dp
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        // Reconnect network button
+        KidSeePillButton(
+            text = stringResource(R.string.btn_reconnect_wifi),
+            onClick = {
+                val app = KidSeeApp.instance
+                KidSeeChildService.start(context)
+                app.stateManager.startChildServices()
+            },
+            backgroundColor = Color.White,
+            contentColor = WazeBlue,
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = null,
+                    tint = WazeBlue,
+                    modifier = Modifier.size(18.dp)
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            height = 42.dp
+        )
 
         Spacer(modifier = Modifier.weight(1f))
     }

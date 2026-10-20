@@ -26,7 +26,9 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import timber.log.Timber
+import java.io.BufferedInputStream
 import java.io.BufferedReader
+import java.io.ByteArrayOutputStream
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.net.DatagramPacket
@@ -170,6 +172,20 @@ class LanDiscoveryManager(
     }
 
     /**
+     * Actively reconnects to a child device by invalidating stale socket data,
+     * re-resolving IP via subnet sweep / mDNS ping, and requesting fresh status.
+     */
+    fun reconnectDevice(deviceId: String) {
+        scope.launch(Dispatchers.IO) {
+            val ip = deviceIpMap[deviceId]
+            if (ip != null) {
+                fetchDeviceStatusViaHttp(ip)
+            }
+            rescan()
+        }
+    }
+
+    /**
      * Periodically polls discovered devices to keep status (app, volume, battery, lock)
      * updated in real-time, and sweeps subnet every 12 seconds to auto-detect new devices.
      */
@@ -293,10 +309,33 @@ class LanDiscoveryManager(
 
     private fun handleChildIncomingConnection(socket: Socket) {
         try {
-            socket.soTimeout = 3000
-            val reader = BufferedReader(InputStreamReader(socket.getInputStream(), Charsets.UTF_8))
+            socket.soTimeout = 4000
+            val rawInput = BufferedInputStream(socket.getInputStream())
             val output = socket.getOutputStream()
-            val firstLine = reader.readLine() ?: return
+
+            // Read headers byte-by-byte until \r\n\r\n or \n\n without consuming ANY body bytes
+            val headerBytes = ByteArrayOutputStream()
+            var prev3 = -1
+            var prev2 = -1
+            var prev1 = -1
+            while (true) {
+                val b = rawInput.read()
+                if (b == -1) break
+                headerBytes.write(b)
+                if (prev2 == '\r'.code && prev1 == '\n'.code && prev3 == '\r'.code && b == '\n'.code) {
+                    break
+                }
+                if (prev1 == '\n'.code && b == '\n'.code) {
+                    break
+                }
+                prev3 = prev2
+                prev2 = prev1
+                prev1 = b
+            }
+
+            val headerString = headerBytes.toString("UTF-8")
+            val headerLines = headerString.lines()
+            val firstLine = headerLines.firstOrNull()?.trim() ?: return
 
             when {
                 // HTTP GET /kidsee/screen (Live screen frame stream)
@@ -341,26 +380,22 @@ class LanDiscoveryManager(
 
                 // HTTP POST /kidsee/voice (Direct voice note from parent)
                 firstLine.startsWith("POST /kidsee/voice") -> {
-                    var contentLength = 0
-                    var headerLine = reader.readLine()
-                    while (!headerLine.isNullOrEmpty()) {
-                        if (headerLine.lowercase().startsWith("content-length:")) {
-                            contentLength = headerLine.substringAfter(":").trim().toIntOrNull() ?: 0
-                        }
-                        headerLine = reader.readLine()
-                    }
+                    val contentLength = headerLines.find { it.lowercase().startsWith("content-length:") }
+                        ?.substringAfter(":")?.trim()?.toIntOrNull() ?: 0
 
                     if (contentLength > 0) {
-                        val input = socket.getInputStream()
                         val audioBuffer = ByteArray(contentLength)
                         var readTotal = 0
                         while (readTotal < contentLength) {
-                            val r = input.read(audioBuffer, readTotal, contentLength - readTotal)
+                            val r = rawInput.read(audioBuffer, readTotal, contentLength - readTotal)
                             if (r == -1) break
                             readTotal += r
                         }
                         if (readTotal == contentLength) {
                             onVoiceMessageReceived?.invoke(audioBuffer)
+                            Timber.d("Child received and triggered direct voice audio ($contentLength bytes)")
+                        } else {
+                            Timber.w("Voice audio received incomplete: $readTotal / $contentLength bytes")
                         }
                         val okBytes = """{"status":"ok"}""".toByteArray(Charsets.UTF_8)
                         val response = "HTTP/1.1 200 OK\r\n" +
@@ -370,7 +405,6 @@ class LanDiscoveryManager(
                         output.write(response.toByteArray(Charsets.UTF_8))
                         output.write(okBytes)
                         output.flush()
-                        Timber.d("Child received and triggered direct voice audio ($contentLength bytes)")
                     } else {
                         val err = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n"
                         output.write(err.toByteArray(Charsets.UTF_8))
@@ -380,37 +414,37 @@ class LanDiscoveryManager(
 
                 // HTTP POST /kidsee/command (or /command)
                 firstLine.startsWith("POST") -> {
-                    var contentLength = 0
-                    var headerLine = reader.readLine()
-                    while (!headerLine.isNullOrEmpty()) {
-                        if (headerLine.lowercase().startsWith("content-length:")) {
-                            contentLength = headerLine.substringAfter(":").trim().toIntOrNull() ?: 0
-                        }
-                        headerLine = headerLine.let { reader.readLine() }
-                    }
+                    val contentLength = headerLines.find { it.lowercase().startsWith("content-length:") }
+                        ?.substringAfter(":")?.trim()?.toIntOrNull() ?: 0
 
-                    val bodyChars = CharArray(contentLength)
-                    var readTotal = 0
-                    while (readTotal < contentLength) {
-                        val r = reader.read(bodyChars, readTotal, contentLength - readTotal)
-                        if (r == -1) break
-                        readTotal += r
-                    }
-                    val bodyString = String(bodyChars, 0, readTotal)
-                    try {
-                        val command = json.decodeFromString<DeviceCommand>(bodyString)
-                        _incomingCommandsFlow.tryEmit(command)
-                        val okBytes = """{"status":"ok"}""".toByteArray(Charsets.UTF_8)
-                        val response = "HTTP/1.1 200 OK\r\n" +
-                                "Content-Type: application/json; charset=utf-8\r\n" +
-                                "Content-Length: ${okBytes.size}\r\n" +
-                                "Connection: close\r\n\r\n"
-                        output.write(response.toByteArray(Charsets.UTF_8))
-                        output.write(okBytes)
-                        output.flush()
-                        Timber.d("Child received and executed TCP command: ${command.type}")
-                    } catch (e: Exception) {
-                        Timber.w(e, "Failed to parse TCP command payload")
+                    if (contentLength > 0) {
+                        val bodyBytes = ByteArray(contentLength)
+                        var readTotal = 0
+                        while (readTotal < contentLength) {
+                            val r = rawInput.read(bodyBytes, readTotal, contentLength - readTotal)
+                            if (r == -1) break
+                            readTotal += r
+                        }
+                        val bodyString = String(bodyBytes, 0, readTotal, Charsets.UTF_8)
+                        try {
+                            val command = json.decodeFromString<DeviceCommand>(bodyString)
+                            _incomingCommandsFlow.tryEmit(command)
+                            val okBytes = """{"status":"ok"}""".toByteArray(Charsets.UTF_8)
+                            val response = "HTTP/1.1 200 OK\r\n" +
+                                    "Content-Type: application/json; charset=utf-8\r\n" +
+                                    "Content-Length: ${okBytes.size}\r\n" +
+                                    "Connection: close\r\n\r\n"
+                            output.write(response.toByteArray(Charsets.UTF_8))
+                            output.write(okBytes)
+                            output.flush()
+                            Timber.d("Child received and executed TCP command: ${command.type}")
+                        } catch (e: Exception) {
+                            Timber.w(e, "Failed to parse TCP command payload: $bodyString")
+                            val err = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n"
+                            output.write(err.toByteArray(Charsets.UTF_8))
+                            output.flush()
+                        }
+                    } else {
                         val err = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n"
                         output.write(err.toByteArray(Charsets.UTF_8))
                         output.flush()

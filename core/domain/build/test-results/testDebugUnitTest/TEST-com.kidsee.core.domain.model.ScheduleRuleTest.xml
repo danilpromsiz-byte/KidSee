@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.kidsee.core.domain.model.ScheduleRuleTest" tests="3" skipped="0" failures="0" errors="0" timestamp="2026-10-20T05:26:51" hostname="HOME-PC" time="0.042">
+  <properties/>
+  <testcase name="testDisabledSchedule_neverActive" classname="com.kidsee.core.domain.model.ScheduleRuleTest" time="0.04"/>
+  <testcase name="testBedtimeSchedule_spansMidnight" classname="com.kidsee.core.domain.model.ScheduleRuleTest" time="0.0"/>
+  <testcase name="testDaytimeSchedule_activeWithinRange" classname="com.kidsee.core.domain.model.ScheduleRuleTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

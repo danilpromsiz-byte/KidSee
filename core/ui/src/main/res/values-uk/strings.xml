@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">KidSee</string>
+    <string name="tagline">Розумний та турботливий батьківський контроль</string>
+
+    <!-- Language Selection -->
+    <string name="select_language">Оберіть мову</string>
+    <string name="lang_en">English</string>
+    <string name="lang_fr">Français</string>
+    <string name="lang_es">Español</string>
+    <string name="lang_ru">Русский</string>
+    <string name="lang_uk">Українська</string>
+
+    <!-- Mode Selection -->
+    <string name="choose_mode_title">Хто користується цим пристроєм?</string>
+    <string name="choose_mode_subtitle">Оберіть Батьки на своєму телефоні/планшеті/ТВ, або Дитина на пристрої для нагляду</string>
+    <string name="mode_parent">Батьки</string>
+    <string name="mode_parent_desc">Нагляд за пристроями, керування відео, гучністю, блокування та голосовий зв\'язок</string>
+    <string name="mode_child">Дитина</string>
+    <string name="mode_child_desc">Безпечна трансляція контенту батькам, голосові повідомлення та розклад</string>
+    <string name="btn_continue">Продовжити</string>
+
+    <!-- Pairing -->
+    <string name="pairing_title">Підключення нового пристрою</string>
+    <string name="pairing_scan_qr_hint">Відскануйте цей QR-код з пристрою дитини</string>
+    <string name="pairing_code_label">Або введіть код підключення:</string>
+    <string name="pairing_child_enter_code">Введіть код сімейного підключення</string>
+    <string name="pairing_success">Пристрій успішно підключено!</string>
+    <string name="pairing_scan_camera">Сканувати QR-код</string>
+
+    <!-- Child Setup Wizard (Permissions) -->
+    <string name="setup_title">Налаштування дозволів</string>
+    <string name="setup_subtitle">KidSee потребує цих дозволів для захисту та нагляду за дитиною</string>
+    <string name="perm_accessibility">Спеціальні можливості</string>
+    <string name="perm_accessibility_desc">Визначення активних додатків та відтворення відео</string>
+    <string name="perm_notification">Доступ до сповіщень</string>
+    <string name="perm_notification_desc">Дозволяє ставити на паузу, перемикати відео та регулювати звук</string>
+    <string name="perm_overlay">Відображення поверх інших вікон</string>
+    <string name="perm_overlay_desc">Показує екран блокування після завершення часу</string>
+    <string name="perm_projection">Захоплення екрана та звуку</string>
+    <string name="perm_projection_desc">Передає відео та звук у реальному часі батькам</string>
+    <string name="perm_device_admin">Адміністратор пристрою</string>
+    <string name="perm_device_admin_desc">Миттєве блокування екрана на вимогу батьків</string>
+    <string name="perm_usage">Доступ до статистики використання</string>
+    <string name="perm_usage_desc">Облік екранного часу та статистика додатків</string>
+    <string name="perm_status_granted">Надано</string>
+    <string name="perm_status_needed">Увімкнути</string>
+    <string name="btn_finish_setup">Завершити налаштування</string>
+
+    <!-- Parent Dashboard -->
+    <string name="dashboard_title">Панель KidSee</string>
+    <string name="dashboard_subtitle">Пристрої дітей</string>
+    <string name="no_devices_title">Пристроїв ще не підключено</string>
+    <string name="no_devices_desc">Додайте телефон, планшет чи ТВ вашої дитини для перегляду та керування</string>
+    <string name="btn_add_device">Додати пристрій дитини</string>
+    <string name="status_online">У мережі</string>
+    <string name="status_offline">Не в мережі</string>
+    <string name="status_streaming">У прямому ефірі</string>
+    <string name="status_locked">Заблоковано</string>
+    <string name="app_idle">У спокої</string>
+    <string name="watching_video">Дивиться відео</string>
+    <string name="listening_audio">Слухає аудіо</string>
+    <string name="lock_all">Заблокувати всі</string>
+    <string name="unlock_all">Розблокувати всі</string>
+
+    <!-- Device Detail / Live View -->
+    <string name="live_stream_title">Екран дитини</string>
+    <string name="pip_button">Картинка в картинці</string>
+    <string name="btn_lock_screen">Заблокувати екран</string>
+    <string name="btn_unlock_screen">Розблокувати екран</string>
+    <string name="audio_listen_on">Звук дитини: УВІМК</string>
+    <string name="audio_listen_off">Звук дитини: ВИМК</string>
+    <string name="push_to_talk">Затисніть, щоб говорити</string>
+    <string name="release_to_send">Відпустіть для надсилання</string>
+    <string name="recording_voice_msg">Запис голосового повідомлення…</string>
+    <string name="send_voice_note">Надіслати голосове</string>
+    <string name="media_play">Відтворити</string>
+    <string name="media_pause">Пауза</string>
+    <string name="media_skip_next">Наступне відео</string>
+    <string name="media_skip_prev">Попереднє відео</string>
+    <string name="volume_label">Гучність: %1$d%%</string>
+
+    <!-- Child Active / Locked Screen -->
+    <string name="child_active_title">KidSee активний</string>
+    <string name="child_active_desc">Пристрій захищено сімейними правилами</string>
+    <string name="locked_title">Час зробити перерву!</string>
+    <string name="locked_subtitle">Екран заблоковано батьками</string>
+    <string name="locked_message">Поговоріть з батьками або проведіть час поза екраном!</string>
+    <string name="incoming_voice_title">Голосове повідомлення</string>
+    <string name="incoming_voice_desc">Повідомлення від %1$s</string>
+
+    <!-- Schedule -->
+    <string name="schedule_title">Розклад сну та навчання</string>
+    <string name="schedule_add_rule">Додати правило</string>
+    <string name="schedule_rule_name">Назва правила</string>
+    <string name="schedule_start_time">Час початку</string>
+    <string name="schedule_end_time">Час закінчення</string>
+    <string name="schedule_days">Дні повторення</string>
+    <string name="schedule_enabled">Увімкнено</string>
+    <string name="btn_save">Зберегти</string>
+    <string name="btn_delete">Видалити</string>
+    <string name="btn_cancel">Скасувати</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.KidSee" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:statusBarColor">#F9F7F1</item>
+        <item name="android:navigationBarColor">#F9F7F1</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

@@ -218,4 +218,9 @@
     <string name="perm_screen_capture_desc">Allows parent to view child screen live over Wi-Fi</string>
     <string name="btn_enable_screen_stream">Start Screen Stream</string>
     <string name="screen_stream_active_badge">LIVE STREAMING</string>
+    <string name="btn_fullscreen">Fullscreen</string>
+    <string name="btn_exit_fullscreen">Exit Fullscreen</string>
+    <string name="btn_delete_device">Remove Device</string>
+    <string name="voice_sent_toast">Voice note sent</string>
+    <string name="status_recording_voice">Recording…</string>
 </resources>

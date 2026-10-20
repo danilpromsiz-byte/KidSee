@@ -218,4 +218,9 @@
     <string name="perm_screen_capture_desc">Дозволяє батькам бачити те, що відбувається на екрані наживо</string>
     <string name="btn_enable_screen_stream">Увімкнути трансляцію екрана</string>
     <string name="screen_stream_active_badge">ПРЯМИЙ ЕФІР</string>
+    <string name="btn_fullscreen">На весь екран</string>
+    <string name="btn_exit_fullscreen">Вийти з повноекранного режиму</string>
+    <string name="btn_delete_device">Видалити пристрій</string>
+    <string name="voice_sent_toast">Голосове повідомлення надіслано</string>
+    <string name="status_recording_voice">Запис…</string>
 </resources>

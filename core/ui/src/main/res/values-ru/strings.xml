@@ -218,4 +218,9 @@
     <string name="perm_screen_capture_desc">Позволяет родителям видеть происходящее на экране в реальном времени</string>
     <string name="btn_enable_screen_stream">Включить трансляцию экрана</string>
     <string name="screen_stream_active_badge">ПРЯМОЙ ЭФИР</string>
+    <string name="btn_fullscreen">На весь экран</string>
+    <string name="btn_exit_fullscreen">Выйти из полноэкранного режима</string>
+    <string name="btn_delete_device">Удалить устройство</string>
+    <string name="voice_sent_toast">Голосовое сообщение отправлено</string>
+    <string name="status_recording_voice">Запись…</string>
 </resources>

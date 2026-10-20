@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.decodeFromString
@@ -90,9 +91,19 @@ class LanDiscoveryManager(
     // Active State & Discovery Cache
     private var activeDeviceProvider: (() -> ChildDevice?)? = null
     private var activeFrameProvider: (() -> ByteArray?)? = null
+    var onVoiceMessageReceived: ((ByteArray) -> Unit)? = null
 
     fun setFrameProvider(provider: () -> ByteArray?) {
         activeFrameProvider = provider
+    }
+
+    fun forgetDevice(deviceId: String) {
+        val ip = deviceIpMap.remove(deviceId)
+        if (ip != null) {
+            knownChildIps.remove(ip)
+        }
+        discoveredDevices.remove(deviceId)
+        _discoveredDevicesFlow.value = discoveredDevices.values.toList()
     }
     private val discoveredDevices = ConcurrentHashMap<String, ChildDevice>()
     private val deviceIpMap = ConcurrentHashMap<String, String>() // deviceId -> IP address
@@ -324,6 +335,45 @@ class LanDiscoveryManager(
                     } else {
                         val notFound = "HTTP/1.1 404 Not Found\r\nConnection: close\r\n\r\n"
                         output.write(notFound.toByteArray(Charsets.UTF_8))
+                        output.flush()
+                    }
+                }
+
+                // HTTP POST /kidsee/voice (Direct voice note from parent)
+                firstLine.startsWith("POST /kidsee/voice") -> {
+                    var contentLength = 0
+                    var headerLine = reader.readLine()
+                    while (!headerLine.isNullOrEmpty()) {
+                        if (headerLine.lowercase().startsWith("content-length:")) {
+                            contentLength = headerLine.substringAfter(":").trim().toIntOrNull() ?: 0
+                        }
+                        headerLine = reader.readLine()
+                    }
+
+                    if (contentLength > 0) {
+                        val input = socket.getInputStream()
+                        val audioBuffer = ByteArray(contentLength)
+                        var readTotal = 0
+                        while (readTotal < contentLength) {
+                            val r = input.read(audioBuffer, readTotal, contentLength - readTotal)
+                            if (r == -1) break
+                            readTotal += r
+                        }
+                        if (readTotal == contentLength) {
+                            onVoiceMessageReceived?.invoke(audioBuffer)
+                        }
+                        val okBytes = """{"status":"ok"}""".toByteArray(Charsets.UTF_8)
+                        val response = "HTTP/1.1 200 OK\r\n" +
+                                "Content-Type: application/json; charset=utf-8\r\n" +
+                                "Content-Length: ${okBytes.size}\r\n" +
+                                "Connection: close\r\n\r\n"
+                        output.write(response.toByteArray(Charsets.UTF_8))
+                        output.write(okBytes)
+                        output.flush()
+                        Timber.d("Child received and triggered direct voice audio ($contentLength bytes)")
+                    } else {
+                        val err = "HTTP/1.1 400 Bad Request\r\nConnection: close\r\n\r\n"
+                        output.write(err.toByteArray(Charsets.UTF_8))
                         output.flush()
                     }
                 }
@@ -678,6 +728,36 @@ class LanDiscoveryManager(
             }
         } catch (_: Exception) {
             null
+        }
+    }
+
+    /**
+     * Sends voice audio recording directly to child device over local Wi-Fi.
+     */
+    suspend fun sendVoiceAudio(deviceId: String, audioBytes: ByteArray): Boolean {
+        val ip = deviceIpMap[deviceId] ?: return false
+        return withContext(Dispatchers.IO) {
+            try {
+                val s = Socket()
+                s.connect(InetSocketAddress(ip, DISCOVERY_PORT), 1500)
+                s.soTimeout = 4000
+                val header = "POST /kidsee/voice HTTP/1.1\r\n" +
+                        "Host: $ip\r\n" +
+                        "Content-Type: audio/mp4\r\n" +
+                        "Content-Length: ${audioBytes.size}\r\n" +
+                        "Connection: close\r\n\r\n"
+                val out = s.getOutputStream()
+                out.write(header.toByteArray(Charsets.UTF_8))
+                out.write(audioBytes)
+                out.flush()
+                val reader = BufferedReader(InputStreamReader(s.getInputStream(), Charsets.UTF_8))
+                val line = reader.readLine()
+                s.close()
+                line != null && line.contains("200")
+            } catch (e: Exception) {
+                Timber.e(e, "Failed to send voice audio to $deviceId at $ip")
+                false
+            }
         }
     }
 

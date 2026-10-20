@@ -218,4 +218,9 @@
     <string name="perm_screen_capture_desc">Permite a los padres ver la pantalla en vivo por Wi-Fi</string>
     <string name="btn_enable_screen_stream">Iniciar transmisión de pantalla</string>
     <string name="screen_stream_active_badge">EN VIVO</string>
+    <string name="btn_fullscreen">Pantalla completa</string>
+    <string name="btn_exit_fullscreen">Salir de pantalla completa</string>
+    <string name="btn_delete_device">Eliminar dispositivo</string>
+    <string name="voice_sent_toast">Mensaje de voz enviado</string>
+    <string name="status_recording_voice">Grabando…</string>
 </resources>

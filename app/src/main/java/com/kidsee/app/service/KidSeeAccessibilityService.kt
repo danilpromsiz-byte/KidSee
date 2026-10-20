@@ -52,15 +52,22 @@ class KidSeeAccessibilityService : AccessibilityService() {
 
     private fun detectVideoApp(packageName: String): Boolean {
         val knownVideoPackages = listOf(
-            "com.google.android.youtube",
-            "com.google.android.apps.youtube.kids",
-            "com.netflix.mediaclient",
-            "com.disney.disneyplus",
-            "com.amazon.avod.thirdpartyclient",
-            "com.zhiliaoapp.musically", // TikTok
-            "org.videolan.vlc",
-            "com.mxtech.videoplayer.ad",
-            "tv.twitch.android.app"
+            "youtube",
+            "netflix",
+            "disney",
+            "amazon.avod",
+            "musically", // TikTok
+            "tiktok",
+            "vlc",
+            "videoplayer",
+            "twitch",
+            "rutube",
+            "kinopoisk",
+            "ivi.client",
+            "okko",
+            "kion",
+            "premier",
+            "vk.video"
         )
         return knownVideoPackages.any { packageName.contains(it, ignoreCase = true) }
     }

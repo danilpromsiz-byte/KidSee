@@ -7,15 +7,20 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.kidsee.core.domain.model.ChildDevice
 import com.kidsee.core.domain.model.DeviceType
 import com.kidsee.core.domain.model.UserRole
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import java.util.UUID
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "kidsee_settings")
 
 class KidSeePreferences(private val context: Context) {
+
+    private val json = Json { ignoreUnknownKeys = true; isLenient = true; encodeDefaults = true }
 
     companion object {
         val KEY_ROLE = stringPreferencesKey("user_role")
@@ -26,6 +31,7 @@ class KidSeePreferences(private val context: Context) {
         val KEY_LANGUAGE = stringPreferencesKey("app_language")
         val KEY_IS_SETUP_COMPLETE = booleanPreferencesKey("is_setup_complete")
         val KEY_PARENT_PIN = stringPreferencesKey("parent_pin")
+        val KEY_SAVED_DEVICES = stringPreferencesKey("saved_devices_json")
     }
 
     val roleFlow: Flow<UserRole?> = context.dataStore.data.map { prefs ->
@@ -85,5 +91,45 @@ class KidSeePreferences(private val context: Context) {
 
     suspend fun setParentPin(pin: String) {
         context.dataStore.edit { it[KEY_PARENT_PIN] = pin }
+    }
+
+    val savedDevicesFlow: Flow<List<ChildDevice>> = context.dataStore.data.map { prefs ->
+        val jsonString = prefs[KEY_SAVED_DEVICES] ?: return@map emptyList()
+        try {
+            json.decodeFromString<List<ChildDevice>>(jsonString)
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    suspend fun saveOrUpdateDevice(device: ChildDevice) {
+        context.dataStore.edit { prefs ->
+            val currentJson = prefs[KEY_SAVED_DEVICES] ?: "[]"
+            val list = try {
+                json.decodeFromString<List<ChildDevice>>(currentJson).toMutableList()
+            } catch (_: Exception) {
+                mutableListOf()
+            }
+            val idx = list.indexOfFirst { it.id == device.id }
+            if (idx >= 0) {
+                list[idx] = device
+            } else {
+                list.add(device)
+            }
+            prefs[KEY_SAVED_DEVICES] = json.encodeToString(list)
+        }
+    }
+
+    suspend fun removeDevice(deviceId: String) {
+        context.dataStore.edit { prefs ->
+            val currentJson = prefs[KEY_SAVED_DEVICES] ?: "[]"
+            val list = try {
+                json.decodeFromString<List<ChildDevice>>(currentJson).toMutableList()
+            } catch (_: Exception) {
+                mutableListOf()
+            }
+            list.removeAll { it.id == deviceId }
+            prefs[KEY_SAVED_DEVICES] = json.encodeToString(list)
+        }
     }
 }

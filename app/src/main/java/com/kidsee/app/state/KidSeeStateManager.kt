@@ -3,6 +3,7 @@ package com.kidsee.app.state
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.media.AudioManager
 import android.os.BatteryManager
 import android.os.Build
 import com.kidsee.app.service.KidSeeDeviceAdmin
@@ -18,11 +19,13 @@ import com.kidsee.core.domain.model.DeviceCommand
 import com.kidsee.core.domain.model.DeviceStatus
 import com.kidsee.core.domain.model.DeviceType
 import com.kidsee.core.domain.model.UserRole
+import com.kidsee.core.domain.model.VoiceMessage
 import com.kidsee.core.network.FirebaseClient
 import com.kidsee.core.network.lan.LanDiscoveryManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import java.io.File
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -47,6 +50,9 @@ class KidSeeStateManager(
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val voiceMessageManager = VoiceMessageManager(context)
+    private val audioManager by lazy {
+        context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    }
 
     private var heartbeatJob: Job? = null
     private var commandJob: Job? = null
@@ -95,6 +101,19 @@ class KidSeeStateManager(
 
         // 0. Start LAN embedded server & broadcasting of child state
         lanDiscoveryManager.setFrameProvider { ScreenCaptureService.latestJpegFrame }
+        lanDiscoveryManager.onVoiceMessageReceived = { audioBytes ->
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val file = File(context.cacheDir, "incoming_voice_${System.currentTimeMillis()}.m4a")
+                    file.writeBytes(audioBytes)
+                    voiceMessageManager.playVoiceMessage(
+                        VoiceMessage(audioUrl = file.absolutePath, senderName = "Parent")
+                    )
+                } catch (e: Exception) {
+                    Timber.e(e, "Error processing incoming voice note")
+                }
+            }
+        }
         lanDiscoveryManager.startBroadcasting { _currentDeviceState.value }
 
         scope.launch {
@@ -227,11 +246,46 @@ class KidSeeStateManager(
             CommandType.MEDIA_NEXT -> mediaService?.skipNext()
             CommandType.MEDIA_PREV -> mediaService?.skipPrevious()
             CommandType.VOLUME_SET -> {
-                val level = command.payload?.toIntOrNull() ?: 50
+                val level = (command.payload?.toIntOrNull() ?: 50).coerceIn(0, 100)
+                try {
+                    val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+                    val target = ((level * max) / 100).coerceIn(0, max)
+                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, AudioManager.FLAG_SHOW_UI)
+                    Timber.d("Direct audioManager set volume to $target / $max ($level%)")
+                } catch (e: Exception) {
+                    Timber.e(e, "Failed to set volume via audioManager")
+                }
                 mediaService?.setVolume(level)
+                val current = _currentDeviceState.value
+                if (current != null) {
+                    val updated = current.copy(currentVolume = level)
+                    _currentDeviceState.value = updated
+                    scope.launch { repository.updateDeviceStatus(updated) }
+                }
             }
-            CommandType.VOLUME_UP -> mediaService?.changeVolumeBy(1)
-            CommandType.VOLUME_DOWN -> mediaService?.changeVolumeBy(-1)
+            CommandType.VOLUME_UP -> {
+                try {
+                    audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
+                } catch (_: Exception) {
+                    mediaService?.changeVolumeBy(1)
+                }
+            }
+            CommandType.VOLUME_DOWN -> {
+                try {
+                    audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+                } catch (_: Exception) {
+                    mediaService?.changeVolumeBy(-1)
+                }
+            }
+            CommandType.SET_PIN -> {
+                val pin = command.payload?.trim() ?: ""
+                if (pin.isNotBlank()) {
+                    scope.launch {
+                        repository.saveParentPin(pin)
+                        Timber.d("Synchronized Parent PIN on child to: $pin")
+                    }
+                }
+            }
             CommandType.START_STREAM -> {
                 onStreamRequested?.invoke()
             }

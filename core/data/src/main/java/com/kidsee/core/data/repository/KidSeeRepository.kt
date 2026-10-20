@@ -57,16 +57,31 @@ class KidSeeRepository(
     // --- Devices (Merges local LAN discovery + Firebase) ---
 
     suspend fun updateDeviceStatus(device: ChildDevice) {
+        preferences.saveOrUpdateDevice(device)
         firebaseClient.updateDeviceStatus(device)
         lanDiscoveryManager?.broadcastDevice(device)
     }
 
+    suspend fun saveOrUpdateDevice(device: ChildDevice) {
+        preferences.saveOrUpdateDevice(device)
+    }
+
+    suspend fun removeDevice(deviceId: String) {
+        preferences.removeDevice(deviceId)
+        lanDiscoveryManager?.forgetDevice(deviceId)
+    }
+
     fun observeFamilyDevices(familyId: String): Flow<List<ChildDevice>> {
+        val savedFlow = preferences.savedDevicesFlow
         val lanFlow = lanDiscoveryManager?.discoveredDevicesFlow ?: flowOf(emptyList())
         val fbFlow = firebaseClient.observeFamilyDevices(familyId).onStart { emit(emptyList()) }
 
-        return combine(lanFlow, fbFlow) { lanList, fbList ->
+        return combine(savedFlow, lanFlow, fbFlow) { savedList, lanList, fbList ->
             val map = LinkedHashMap<String, ChildDevice>()
+            // Previously saved / paired devices (marked offline by default until live report)
+            for (d in savedList) {
+                map[d.id] = d.copy(status = com.kidsee.core.domain.model.DeviceStatus.OFFLINE)
+            }
             // Remote Firebase devices
             for (d in fbList) {
                 map[d.id] = d

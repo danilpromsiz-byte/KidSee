@@ -2,6 +2,7 @@ package com.kidsee.app.ui.parent
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,13 +25,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PictureInPicture
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.RecordVoiceOver
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.VolumeDown
@@ -98,14 +100,22 @@ fun DeviceDetailScreen(
     onMediaPrev: () -> Unit,
     onVolumeChanged: (Int) -> Unit,
     onPushToTalkStart: () -> Unit,
-    onPushToTalkStop: () -> Unit,
-    onSendVoiceNote: () -> Unit
+    onPushToTalkStop: () -> Unit
 ) {
     var isAudioMuted by remember { mutableStateOf(false) }
     var isTalkingLive by remember { mutableStateOf(false) }
     var volumeSlider by remember(device.currentVolume) { mutableFloatStateOf(device.currentVolume.toFloat()) }
-
     var currentBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var isFullscreen by remember { mutableStateOf(false) }
+
+    // Intercept hardware/system back button to exit fullscreen or return to devices list
+    BackHandler {
+        if (isFullscreen) {
+            isFullscreen = false
+        } else {
+            onBackClick()
+        }
+    }
 
     // Real-time polling loop for child screen frames over Wi-Fi (~8 fps)
     LaunchedEffect(device.id, lanDiscoveryManager) {
@@ -125,14 +135,68 @@ fun DeviceDetailScreen(
         }
     }
 
+    // Fullscreen Mode
+    if (isFullscreen) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+            contentAlignment = Alignment.Center
+        ) {
+            val bmp = currentBitmap
+            if (bmp != null) {
+                Image(
+                    bitmap = bmp.asImageBitmap(),
+                    contentDescription = stringResource(R.string.screen_mirror_content_desc),
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    KidSeeMascot(size = 64.dp)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(if (device.isOnline) R.string.screen_stream_not_active else R.string.screen_stream_offline),
+                        color = Color.White,
+                        style = KidSeeTypography.titleMedium
+                    )
+                }
+            }
+
+            // Exit Fullscreen Button in top-left
+            IconButton(
+                onClick = { isFullscreen = false },
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.6f))
+            ) {
+                Icon(
+                    imageVector = Icons.Default.FullscreenExit,
+                    contentDescription = stringResource(R.string.btn_exit_fullscreen),
+                    tint = Color.White
+                )
+            }
+        }
+        return
+    }
+
+    val isVideoActive = device.isVideoPlaying ||
+            (device.currentPackage?.contains("youtube", ignoreCase = true) == true) ||
+            (device.currentPackage?.contains("video", ignoreCase = true) == true) ||
+            (device.currentPackage?.contains("rutube", ignoreCase = true) == true) ||
+            (device.currentPackage?.contains("twitch", ignoreCase = true) == true) ||
+            !device.currentMediaTitle.isNullOrEmpty()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(WazeWarmWhite)
             .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            .padding(14.dp)
     ) {
-        // Top Bar
+        // Compact Top Bar
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -144,16 +208,18 @@ fun DeviceDetailScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.width(8.dp))
+            Spacer(modifier = Modifier.width(6.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = device.name.ifEmpty { stringResource(R.string.device_detail_default_name) },
-                    style = KidSeeTypography.titleLarge
+                    style = KidSeeTypography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    maxLines = 1
                 )
                 Text(
                     text = device.currentAppLabel ?: stringResource(R.string.app_idle),
-                    style = KidSeeTypography.bodyMedium
+                    style = KidSeeTypography.bodySmall.copy(color = WazeTextSecondary),
+                    maxLines = 1
                 )
             }
 
@@ -167,14 +233,14 @@ fun DeviceDetailScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         // Screen Video View (Live Screen Stream Canvas)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(16f / 9f)
-                .clip(RoundedCornerShape(20.dp))
+                .clip(RoundedCornerShape(18.dp))
                 .background(Color.Black),
             contentAlignment = Alignment.Center
         ) {
@@ -190,10 +256,10 @@ fun DeviceDetailScreen(
                 // Inactive stream placeholder
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(16.dp)
+                    modifier = Modifier.padding(14.dp)
                 ) {
-                    KidSeeMascot(size = 54.dp)
-                    Spacer(modifier = Modifier.height(6.dp))
+                    KidSeeMascot(size = 48.dp)
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = stringResource(
                             if (device.isOnline) R.string.screen_stream_not_active else R.string.screen_stream_offline
@@ -201,7 +267,7 @@ fun DeviceDetailScreen(
                         color = Color.White,
                         style = KidSeeTypography.titleSmall.copy(fontWeight = FontWeight.Bold)
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
                         text = stringResource(R.string.screen_stream_prompt_desc),
                         color = Color.White.copy(alpha = 0.7f),
@@ -209,12 +275,12 @@ fun DeviceDetailScreen(
                         textAlign = TextAlign.Center
                     )
                     if (device.isOnline) {
-                        Spacer(modifier = Modifier.height(10.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
                         KidSeePillButton(
                             text = stringResource(R.string.btn_request_stream),
                             onClick = onRequestStream,
                             backgroundColor = WazeBlue,
-                            height = 36.dp
+                            height = 34.dp
                         )
                     }
                 }
@@ -227,10 +293,10 @@ fun DeviceDetailScreen(
                     color = WazeRed,
                     modifier = Modifier
                         .align(Alignment.TopStart)
-                        .padding(10.dp)
+                        .padding(8.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(
@@ -239,7 +305,7 @@ fun DeviceDetailScreen(
                                 .clip(CircleShape)
                                 .background(Color.White)
                         )
-                        Spacer(modifier = Modifier.width(5.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = stringResource(R.string.screen_stream_active_badge),
                             style = KidSeeTypography.labelSmall.copy(
@@ -257,69 +323,96 @@ fun DeviceDetailScreen(
                 color = if (isAudioMuted) Color.Black.copy(alpha = 0.6f) else WazeGreen.copy(alpha = 0.85f),
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(10.dp)
+                    .padding(8.dp)
             ) {
                 Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
                         imageVector = if (isAudioMuted) Icons.Default.VolumeMute else Icons.Default.VolumeUp,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(16.dp)
+                        modifier = Modifier.size(14.dp)
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
+                    Spacer(modifier = Modifier.width(3.dp))
                     Text(
                         text = stringResource(if (isAudioMuted) R.string.audio_muted else R.string.audio_on),
                         style = KidSeeTypography.labelSmall.copy(color = Color.White)
                     )
                 }
             }
-        }
 
-        // Active Video Notification Banner
-        if (device.isVideoPlaying || !device.currentMediaTitle.isNullOrEmpty()) {
-            Spacer(modifier = Modifier.height(10.dp))
-            Surface(
-                shape = RoundedCornerShape(16.dp),
-                color = WazeBlue.copy(alpha = 0.12f),
-                border = BorderStroke(1.5.dp, WazeBlue),
-                modifier = Modifier.fillMaxWidth()
+            // Fullscreen Button in bottom-right
+            IconButton(
+                onClick = { isFullscreen = true },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(6.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.5f))
+                    .size(34.dp)
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = null,
-                        tint = WazeBlue,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(
-                                R.string.status_video_playing,
-                                device.currentMediaTitle ?: device.currentAppLabel ?: ""
-                            ),
-                            style = KidSeeTypography.titleSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = WazeBlue
-                            )
-                        )
-                    }
-                }
+                Icon(
+                    imageVector = Icons.Default.Fullscreen,
+                    contentDescription = stringResource(R.string.btn_fullscreen),
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Audio & Push-To-Talk Control Bar
+        // Compact Screen Lock Action Bar
+        KidSeeCard(
+            backgroundColor = if (device.isScreenLocked) WazeGreenLight else WazeRedLight,
+            borderColor = if (device.isScreenLocked) WazeGreen else WazeRed,
+            elevation = 2.dp
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = if (device.isScreenLocked) Icons.Default.LockOpen else Icons.Default.Lock,
+                    contentDescription = null,
+                    tint = if (device.isScreenLocked) WazeGreen else WazeRed,
+                    modifier = Modifier.size(24.dp)
+                )
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Text(
+                    text = stringResource(
+                        if (device.isScreenLocked) R.string.device_locked_title else R.string.block_screen_now_title
+                    ),
+                    style = KidSeeTypography.titleSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = if (device.isScreenLocked) WazeGreen else WazeRed
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+
+                KidSeePillButton(
+                    text = stringResource(
+                        if (device.isScreenLocked) R.string.btn_unlock else R.string.btn_lock
+                    ),
+                    onClick = onLockToggle,
+                    backgroundColor = if (device.isScreenLocked) WazeGreen else WazeRed,
+                    height = 36.dp
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        // Audio & Push-To-Talk Control Bar (Unified single voice button)
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Mute / Unmute Sound
             KidSeePillButton(
@@ -331,18 +424,18 @@ fun DeviceDetailScreen(
                     Icon(
                         imageVector = if (isAudioMuted) Icons.Default.VolumeMute else Icons.Default.VolumeUp,
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 },
                 modifier = Modifier.weight(1f),
-                height = 50.dp
+                height = 46.dp
             )
 
             // Push-to-Talk (Hold to speak live to child)
             Box(
                 modifier = Modifier
-                    .weight(1f)
-                    .height(50.dp)
+                    .weight(1.2f)
+                    .height(46.dp)
                     .clip(RoundedCornerShape(percent = 50))
                     .background(if (isTalkingLive) WazeGreen else WazePurple)
                     .pointerInput(Unit) {
@@ -363,12 +456,12 @@ fun DeviceDetailScreen(
                         imageVector = Icons.Default.Mic,
                         contentDescription = null,
                         tint = Color.White,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = stringResource(if (isTalkingLive) R.string.status_speaking else R.string.btn_hold_to_talk),
-                        style = KidSeeTypography.titleMedium.copy(
+                        text = stringResource(if (isTalkingLive) R.string.status_recording_voice else R.string.btn_hold_to_talk),
+                        style = KidSeeTypography.titleSmall.copy(
                             color = Color.White,
                             fontWeight = FontWeight.Bold
                         )
@@ -377,97 +470,149 @@ fun DeviceDetailScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
-        // Media Controls Card (Play, Pause, Skip, Prev, Volume)
-        KidSeeCard(elevation = 3.dp) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = stringResource(R.string.media_controls_title),
-                    style = KidSeeTypography.titleMedium.copy(fontWeight = FontWeight.Bold)
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Playback Buttons
+        // Active Video Notification Banner (ONLY shown when video is detected)
+        if (isVideoActive) {
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = WazeBlue.copy(alpha = 0.12f),
+                border = BorderStroke(1.5.dp, WazeBlue),
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = onMediaPrev,
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFF0F4F8))
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.SkipPrevious,
-                            contentDescription = stringResource(R.string.btn_prev),
-                            tint = WazeBlue
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        tint = WazeBlue,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(
+                            R.string.status_video_playing,
+                            device.currentMediaTitle ?: device.currentAppLabel ?: ""
+                        ),
+                        style = KidSeeTypography.titleSmall.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = WazeBlue
+                        ),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
 
-                    IconButton(
-                        onClick = onMediaPause,
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(CircleShape)
-                            .background(WazeBlue)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Pause,
-                            contentDescription = stringResource(R.string.btn_pause),
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
+            // Dedicated Video Playback Controls Card (Prev, Pause, Play, Next)
+            KidSeeCard(elevation = 2.dp) {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = stringResource(R.string.media_controls_title),
+                        style = KidSeeTypography.titleSmall.copy(fontWeight = FontWeight.Bold)
+                    )
 
-                    IconButton(
-                        onClick = onMediaPlay,
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(CircleShape)
-                            .background(WazeGreen)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.PlayArrow,
-                            contentDescription = stringResource(R.string.btn_play),
-                            tint = Color.White,
-                            modifier = Modifier.size(32.dp)
-                        )
-                    }
+                    Spacer(modifier = Modifier.height(10.dp))
 
-                    IconButton(
-                        onClick = onMediaNext,
-                        modifier = Modifier
-                            .size(50.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFFF0F4F8))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.SkipNext,
-                            contentDescription = stringResource(R.string.btn_next),
-                            tint = WazeBlue
-                        )
+                        IconButton(
+                            onClick = onMediaPrev,
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFF0F4F8))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SkipPrevious,
+                                contentDescription = stringResource(R.string.btn_prev),
+                                tint = WazeBlue
+                            )
+                        }
+
+                        IconButton(
+                            onClick = onMediaPause,
+                            modifier = Modifier
+                                .size(52.dp)
+                                .clip(CircleShape)
+                                .background(WazeBlue)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Pause,
+                                contentDescription = stringResource(R.string.btn_pause),
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = onMediaPlay,
+                            modifier = Modifier
+                                .size(52.dp)
+                                .clip(CircleShape)
+                                .background(WazeGreen)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.PlayArrow,
+                                contentDescription = stringResource(R.string.btn_play),
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = onMediaNext,
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(Color(0xFFF0F4F8))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.SkipNext,
+                                contentDescription = stringResource(R.string.btn_next),
+                                tint = WazeBlue
+                            )
+                        }
                     }
                 }
+            }
+            Spacer(modifier = Modifier.height(10.dp))
+        }
 
-                Spacer(modifier = Modifier.height(18.dp))
-
-                // Volume Control Slider
+        // Volume Control Card
+        KidSeeCard(elevation = 2.dp) {
+            Column(modifier = Modifier.fillMaxWidth()) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(imageVector = Icons.Default.VolumeDown, contentDescription = null, tint = WazeTextSecondary)
-                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = {
+                            val next = (volumeSlider - 10).coerceAtLeast(0f)
+                            volumeSlider = next
+                            onVolumeChanged(next.toInt())
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.VolumeDown,
+                            contentDescription = null,
+                            tint = WazeTextSecondary
+                        )
+                    }
+
                     Slider(
                         value = volumeSlider,
                         onValueChange = {
                             volumeSlider = it
-                            onVolumeChanged(it.toInt())
+                        },
+                        onValueChangeFinished = {
+                            onVolumeChanged(volumeSlider.toInt())
                         },
                         valueRange = 0f..100f,
                         colors = SliderDefaults.colors(
@@ -476,8 +621,21 @@ fun DeviceDetailScreen(
                         ),
                         modifier = Modifier.weight(1f)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Icon(imageVector = Icons.Default.VolumeUp, contentDescription = null, tint = WazeTextSecondary)
+
+                    IconButton(
+                        onClick = {
+                            val next = (volumeSlider + 10).coerceAtMost(100f)
+                            volumeSlider = next
+                            onVolumeChanged(next.toInt())
+                        },
+                        modifier = Modifier.size(36.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.VolumeUp,
+                            contentDescription = null,
+                            tint = WazeTextSecondary
+                        )
+                    }
                 }
 
                 Text(
@@ -488,74 +646,6 @@ fun DeviceDetailScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Screen Lock Action Card
-        KidSeeCard(
-            backgroundColor = if (device.isScreenLocked) WazeGreenLight else WazeRedLight,
-            borderColor = if (device.isScreenLocked) WazeGreen else WazeRed,
-            elevation = 3.dp
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = if (device.isScreenLocked) Icons.Default.LockOpen else Icons.Default.Lock,
-                    contentDescription = null,
-                    tint = if (device.isScreenLocked) WazeGreen else WazeRed,
-                    modifier = Modifier.size(32.dp)
-                )
-
-                Spacer(modifier = Modifier.width(14.dp))
-
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = stringResource(
-                            if (device.isScreenLocked) R.string.device_locked_title else R.string.block_screen_now_title
-                        ),
-                        style = KidSeeTypography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = if (device.isScreenLocked) WazeGreen else WazeRed
-                        )
-                    )
-                    Text(
-                        text = stringResource(
-                            if (device.isScreenLocked) R.string.device_locked_desc else R.string.block_screen_now_desc
-                        ),
-                        style = KidSeeTypography.bodyMedium.copy(fontSize = 12.sp)
-                    )
-                }
-
-                KidSeePillButton(
-                    text = stringResource(
-                        if (device.isScreenLocked) R.string.btn_unlock else R.string.btn_lock
-                    ),
-                    onClick = onLockToggle,
-                    backgroundColor = if (device.isScreenLocked) WazeGreen else WazeRed,
-                    height = 44.dp
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Send Voice Note Button
-        KidSeePillButton(
-            text = stringResource(R.string.send_voice_note),
-            onClick = onSendVoiceNote,
-            backgroundColor = WazeOrange,
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.RecordVoiceOver,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-            height = 54.dp
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(20.dp))
     }
 }

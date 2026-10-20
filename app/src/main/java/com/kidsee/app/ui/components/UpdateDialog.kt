@@ -24,6 +24,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -39,6 +41,8 @@ import com.kidsee.core.ui.theme.WazeCardBg
 import com.kidsee.core.ui.theme.WazeGreen
 import com.kidsee.core.ui.theme.WazeTextPrimary
 import com.kidsee.core.ui.theme.WazeTextSecondary
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,6 +137,11 @@ fun UpdateDialog(
                     }
 
                     is UpdateState.UpdateAvailable -> {
+                        val updateFocusRequester = remember { FocusRequester() }
+                        LaunchedEffect(Unit) {
+                            updateFocusRequester.requestFocus()
+                        }
+
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.End,
@@ -148,7 +157,8 @@ fun UpdateDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             KidSeePillButton(
                                 text = stringResource(R.string.btn_update_now),
-                                onClick = { onUpdateClick(updateState.releaseInfo) }
+                                onClick = { onUpdateClick(updateState.releaseInfo) },
+                                modifier = Modifier.focusRequester(updateFocusRequester)
                             )
                         }
                     }

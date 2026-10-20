@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BatteryFull
+import androidx.compose.material.icons.filled.DeleteOutline
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.PictureInPicture
@@ -74,6 +75,7 @@ fun ParentDashboardScreen(
     onDeviceClick: (ChildDevice) -> Unit,
     onDevicePipClick: (ChildDevice) -> Unit,
     onLockToggle: (ChildDevice) -> Unit,
+    onDeleteDevice: (ChildDevice) -> Unit = {},
     onAddDeviceClick: () -> Unit,
     onCheckUpdateClick: () -> Unit = {},
     onRescanClick: () -> Unit = {},
@@ -180,7 +182,8 @@ fun ParentDashboardScreen(
                                     currentFamilyId = currentFamilyId,
                                     onAdoptClick = onAdoptDevice?.let { { it(device) } },
                                     onPipClick = { onDevicePipClick(device) },
-                                    onLockClick = { onLockToggle(device) }
+                                    onLockClick = { onLockToggle(device) },
+                                    onDeleteClick = { onDeleteDevice(device) }
                                 )
                             }
                         } else {
@@ -193,7 +196,8 @@ fun ParentDashboardScreen(
                                     currentFamilyId = currentFamilyId,
                                     onAdoptClick = onAdoptDevice?.let { { it(device) } },
                                     onPipClick = { onDevicePipClick(device) },
-                                    onLockClick = { onLockToggle(device) }
+                                    onLockClick = { onLockToggle(device) },
+                                    onDeleteClick = { onDeleteDevice(device) }
                                 )
                             }
                         }
@@ -223,7 +227,8 @@ private fun DeviceCardContent(
     currentFamilyId: String,
     onAdoptClick: (() -> Unit)?,
     onPipClick: () -> Unit,
-    onLockClick: () -> Unit
+    onLockClick: () -> Unit,
+    onDeleteClick: (() -> Unit)? = null
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Row(
@@ -255,7 +260,7 @@ private fun DeviceCardContent(
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = device.name.ifEmpty { "Child Device" },
+                    text = device.name.ifEmpty { stringResource(R.string.device_detail_default_name) },
                     style = KidSeeTypography.titleMedium.copy(fontWeight = FontWeight.Bold)
                 )
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -369,28 +374,44 @@ private fun DeviceCardContent(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Quick Controls: PiP & Lock
+        // Quick Controls: Delete, PiP & Lock
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // PiP Button
-            IconButton(onClick = onPipClick) {
-                Icon(
-                    imageVector = Icons.Default.PictureInPicture,
-                    contentDescription = stringResource(R.string.pip_button),
-                    tint = WazeBlue
-                )
+            // Delete / Forget Device Button
+            if (onDeleteClick != null) {
+                IconButton(onClick = onDeleteClick) {
+                    Icon(
+                        imageVector = Icons.Default.DeleteOutline,
+                        contentDescription = stringResource(R.string.btn_delete_device),
+                        tint = WazeTextSecondary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            } else {
+                Spacer(modifier = Modifier.width(1.dp))
             }
 
-            // Lock / Unlock Button
-            IconButton(onClick = onLockClick) {
-                Icon(
-                    imageVector = if (device.isScreenLocked) Icons.Default.LockOpen else Icons.Default.Lock,
-                    contentDescription = stringResource(if (device.isScreenLocked) R.string.btn_unlock else R.string.btn_lock),
-                    tint = if (device.isScreenLocked) WazeGreen else WazeRed
-                )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // PiP Button
+                IconButton(onClick = onPipClick) {
+                    Icon(
+                        imageVector = Icons.Default.PictureInPicture,
+                        contentDescription = stringResource(R.string.pip_button),
+                        tint = WazeBlue
+                    )
+                }
+
+                // Lock / Unlock Button
+                IconButton(onClick = onLockClick) {
+                    Icon(
+                        imageVector = if (device.isScreenLocked) Icons.Default.LockOpen else Icons.Default.Lock,
+                        contentDescription = stringResource(if (device.isScreenLocked) R.string.btn_unlock else R.string.btn_lock),
+                        tint = if (device.isScreenLocked) WazeGreen else WazeRed
+                    )
+                }
             }
         }
     }

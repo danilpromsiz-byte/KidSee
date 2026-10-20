@@ -10,6 +10,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.drawable.Icon
 import android.media.projection.MediaProjectionManager
 import android.os.Build
@@ -17,10 +19,15 @@ import android.os.Bundle
 import android.util.Rational
 import android.view.KeyEvent
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -31,10 +38,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.core.os.LocaleListCompat
 import com.kidsee.app.service.ScreenCaptureService
+import com.kidsee.app.service.VoiceMessageManager
 import com.kidsee.app.ui.child.ChildActiveScreen
 import com.kidsee.app.ui.components.AddDeviceDialog
 import com.kidsee.app.ui.components.PinCodeDialog
@@ -51,8 +65,14 @@ import com.kidsee.core.domain.model.ChildDevice
 import com.kidsee.core.domain.model.CommandType
 import com.kidsee.core.domain.model.DeviceCommand
 import com.kidsee.core.domain.model.UserRole
+import com.kidsee.core.network.lan.LanDiscoveryManager
 import com.kidsee.core.ui.R
+import com.kidsee.core.ui.components.KidSeeMascot
 import com.kidsee.core.ui.theme.KidSeeTheme
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 import com.kidsee.core.ui.util.LocaleHelper
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.firstOrNull
@@ -270,6 +290,7 @@ class MainActivity : AppCompatActivity() {
                             pinSuccessCallback = { newPin ->
                                 scope.launch {
                                     repository.saveParentPin(newPin)
+                                    sendCommand("", CommandType.SET_PIN, newPin)
                                     Toast.makeText(this@MainActivity, localizedContext.getString(R.string.pin_updated_toast), Toast.LENGTH_SHORT).show()
                                 }
                             }
@@ -330,8 +351,19 @@ class MainActivity : AppCompatActivity() {
             }
 
             val isTv = isAndroidTv()
+            val voiceMessageManager = remember { VoiceMessageManager(this@MainActivity) }
 
-            if (roleState == null) {
+            // Intercept system Back press when in Child Detail screen to return to devices dashboard
+            BackHandler(enabled = selectedDevice != null && !isInPipMode) {
+                selectedDevice = null
+            }
+
+            if (isInPipMode) {
+                PipScreenView(
+                    device = selectedDevice,
+                    lanDiscoveryManager = app.stateManager.lanDiscoveryManager
+                )
+            } else if (roleState == null) {
                 OnboardingScreen(
                     currentLanguage = currentLanguage,
                     onLanguageChanged = { langCode ->
@@ -414,13 +446,25 @@ class MainActivity : AppCompatActivity() {
                                 sendCommand(activeDevice.id, CommandType.VOLUME_SET, vol.toString())
                             },
                             onPushToTalkStart = {
-                                Timber.d("Push-to-Talk started for ${activeDevice.id}")
+                                scope.launch {
+                                    voiceMessageManager.startRecording()
+                                }
                             },
                             onPushToTalkStop = {
-                                Timber.d("Push-to-Talk stopped for ${activeDevice.id}")
-                            },
-                            onSendVoiceNote = {
-                                Timber.d("Send voice note requested for ${activeDevice.id}")
+                                scope.launch {
+                                    val file = voiceMessageManager.stopRecording()
+                                    if (file != null && file.exists() && file.length() > 0) {
+                                        val bytes = file.readBytes()
+                                        val ok = app.stateManager.lanDiscoveryManager.sendVoiceAudio(activeDevice.id, bytes)
+                                        if (ok) {
+                                            Toast.makeText(
+                                                this@MainActivity,
+                                                localizedContext.getString(R.string.voice_sent_toast),
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
+                                    }
+                                }
                             }
                         )
                     } else {
@@ -429,7 +473,16 @@ class MainActivity : AppCompatActivity() {
                             currentFamilyId = familyId,
                             onAdoptDevice = { device ->
                                 sendCommand(device.id, CommandType.SET_FAMILY, familyId)
+                                sendCommand(device.id, CommandType.SET_PIN, parentPin)
+                                scope.launch {
+                                    repository.saveOrUpdateDevice(device.copy(familyId = familyId))
+                                }
                                 Toast.makeText(this@MainActivity, localizedContext.getString(R.string.device_linked_toast, device.name), Toast.LENGTH_SHORT).show()
+                            },
+                            onDeleteDevice = { device ->
+                                scope.launch {
+                                    repository.removeDevice(device.id)
+                                }
                             },
                             onDeviceClick = { device -> selectedDevice = device },
                             onDevicePipClick = { device ->
@@ -563,5 +616,45 @@ class MainActivity : AppCompatActivity() {
     private fun isAndroidTv(): Boolean {
         val uiModeManager = getSystemService(Context.UI_MODE_SERVICE) as UiModeManager
         return uiModeManager.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION
+    }
+
+    @Composable
+    private fun PipScreenView(
+        device: ChildDevice?,
+        lanDiscoveryManager: LanDiscoveryManager?
+    ) {
+        var frameBitmap by remember { mutableStateOf<Bitmap?>(null) }
+        LaunchedEffect(device?.id, lanDiscoveryManager) {
+            val devId = device?.id ?: return@LaunchedEffect
+            while (isActive) {
+                val bytes = withContext(Dispatchers.IO) {
+                    lanDiscoveryManager?.fetchScreenFrame(devId)
+                }
+                if (bytes != null && bytes.isNotEmpty()) {
+                    val bmp = BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                    if (bmp != null) frameBitmap = bmp
+                }
+                delay(120)
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+            contentAlignment = Alignment.Center
+        ) {
+            val bmp = frameBitmap
+            if (bmp != null) {
+                Image(
+                    bitmap = bmp.asImageBitmap(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                KidSeeMascot(size = 48.dp)
+            }
+        }
     }
 }

@@ -17,6 +17,7 @@ enum class CommandType {
     STOP_STREAM,
     PLAY_VOICE_MESSAGE,
     SET_FAMILY,
+    SET_PIN,
     CUSTOM
 }
 

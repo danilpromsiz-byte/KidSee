@@ -218,4 +218,9 @@
     <string name="perm_screen_capture_desc">Permet aux parents de voir l\'écran en direct via Wi-Fi</string>
     <string name="btn_enable_screen_stream">Démarrer la diffusion d\'écran</string>
     <string name="screen_stream_active_badge">EN DIRECT</string>
+    <string name="btn_fullscreen">Plein écran</string>
+    <string name="btn_exit_fullscreen">Quitter le plein écran</string>
+    <string name="btn_delete_device">Supprimer l\'appareil</string>
+    <string name="voice_sent_toast">Message vocal envoyé</string>
+    <string name="status_recording_voice">Enregistrement…</string>
 </resources>

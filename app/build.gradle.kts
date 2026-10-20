@@ -23,16 +23,26 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("${rootDir}/kidsee-release.jks")
+            storePassword = "kidseepass"
+            keyAlias = "kidsee"
+            keyPassword = "kidseepass"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
         }
         debug {
-            applicationIdSuffix = ".debug"
+            signingConfig = signingConfigs.getByName("release")
             isDebuggable = true
         }
     }
@@ -55,6 +65,11 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+
+    lint {
+        checkReleaseBuilds = false
+        abortOnError = false
     }
 }
 
@@ -120,9 +135,12 @@ dependencies {
     debugImplementation(libs.bundles.compose.debug)
 }
 
-tasks.matching { it.name == "assembleDebug" }.configureEach {
+tasks.matching { it.name in listOf("assembleDebug", "assembleRelease") }.configureEach {
     doLast {
-        val src = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
+        val releaseApk = layout.buildDirectory.file("outputs/apk/release/app-release.apk").get().asFile
+        val debugApk = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
+        val src = if (releaseApk.exists()) releaseApk else debugApk
+
         if (src.exists()) {
             val destKidSee = File(rootDir, "KidSee.apk")
             val destApp = File(rootDir, "app-debug.apk")

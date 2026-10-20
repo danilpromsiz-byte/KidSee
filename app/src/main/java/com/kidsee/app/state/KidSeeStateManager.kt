@@ -226,10 +226,14 @@ class KidSeeStateManager(
         val updated = current.copy(
             currentPackage = packageName,
             currentAppLabel = appLabel,
-            isVideoPlaying = isVideo
+            isVideoPlaying = isVideo,
+            status = if (isScreenLocked) DeviceStatus.LOCKED else DeviceStatus.ONLINE,
+            lastSeenTimestamp = System.currentTimeMillis()
         )
         _currentDeviceState.value = updated
         repository.updateDeviceStatus(updated)
+        // Immediately broadcast updated status over LAN so parent sees real-time app change
+        lanDiscoveryManager.broadcastDevice(updated)
     }
 
     private fun executeCommand(command: DeviceCommand) {
@@ -253,54 +257,90 @@ class KidSeeStateManager(
             CommandType.MEDIA_PREV -> mediaService?.skipPrevious()
             CommandType.VOLUME_SET -> {
                 val level = (command.payload?.toIntOrNull() ?: 50).coerceIn(0, 100)
-                try {
-                    val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
-                    val target = ((level * max) / 100).coerceIn(0, max)
-                    audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, target, AudioManager.FLAG_SHOW_UI)
-                    try {
-                        audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, target, AudioManager.FLAG_SHOW_UI)
-                    } catch (_: Exception) {}
-                    Timber.d("Direct audioManager set volume to $target / $max ($level%)")
-                } catch (e: Exception) {
-                    Timber.e(e, "Failed to set volume via audioManager")
-                    // Fallback to step adjustments
+                scope.launch(Dispatchers.Main) {
                     try {
                         val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
                         val target = ((level * max) / 100).coerceIn(0, max)
-                        val current = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-                        val diff = target - current
-                        if (diff > 0) {
-                            repeat(diff) {
-                                audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-                            }
-                        } else if (diff < 0) {
-                            repeat(-diff) {
-                                audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
+
+                        // 1. Unmute or mute as needed
+                        if (target > 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            try {
+                                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0)
+                            } catch (_: Exception) {}
+                        } else if (target == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            try {
+                                audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
+                            } catch (_: Exception) {}
+                        }
+
+                        // 2. Direct setStreamVolume
+                        audioManager.setStreamVolume(
+                            AudioManager.STREAM_MUSIC,
+                            target,
+                            AudioManager.FLAG_SHOW_UI or AudioManager.FLAG_PLAY_SOUND
+                        )
+                        try {
+                            audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM, target, 0)
+                        } catch (_: Exception) {}
+
+                        // 3. Fallback / supplementary step adjustments for Android TV and fixed volume systems
+                        val currentVol = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+                        val diff = target - currentVol
+                        if (diff != 0) {
+                            val dir = if (diff > 0) AudioManager.ADJUST_RAISE else AudioManager.ADJUST_LOWER
+                            val steps = Math.abs(diff).coerceAtMost(max)
+                            repeat(steps) {
+                                try {
+                                    audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, dir, AudioManager.FLAG_SHOW_UI)
+                                    audioManager.adjustVolume(dir, AudioManager.FLAG_SHOW_UI)
+                                    audioManager.adjustSuggestedStreamVolume(dir, AudioManager.USE_DEFAULT_STREAM_TYPE, AudioManager.FLAG_SHOW_UI)
+                                } catch (_: Exception) {}
                             }
                         }
-                    } catch (_: Exception) {}
+                        Timber.d("Volume set to target=$target (max=$max, level=$level%)")
+                    } catch (e: Exception) {
+                        Timber.e(e, "Failed to set volume via audioManager")
+                    }
+
+                    try {
+                        mediaService?.setVolume(level)
+                    } catch (e: Exception) {
+                        Timber.e(e, "Error setting volume in mediaService")
+                    }
                 }
-                mediaService?.setVolume(level)
+
                 val current = _currentDeviceState.value
                 if (current != null) {
-                    val updated = current.copy(currentVolume = level)
+                    val updated = current.copy(
+                        currentVolume = level,
+                        lastSeenTimestamp = System.currentTimeMillis()
+                    )
                     _currentDeviceState.value = updated
                     scope.launch { repository.updateDeviceStatus(updated) }
                 }
             }
             CommandType.VOLUME_UP -> {
-                try {
-                    audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-                    audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI)
-                } catch (_: Exception) {}
-                mediaService?.changeVolumeBy(1)
+                scope.launch(Dispatchers.Main) {
+                    try {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0)
+                        }
+                        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI or AudioManager.FLAG_PLAY_SOUND)
+                        audioManager.adjustVolume(AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI or AudioManager.FLAG_PLAY_SOUND)
+                        audioManager.adjustSuggestedStreamVolume(AudioManager.ADJUST_RAISE, AudioManager.USE_DEFAULT_STREAM_TYPE, AudioManager.FLAG_SHOW_UI or AudioManager.FLAG_PLAY_SOUND)
+                    } catch (_: Exception) {}
+                    mediaService?.changeVolumeBy(1)
+                }
             }
             CommandType.VOLUME_DOWN -> {
-                try {
-                    audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
-                    audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI)
-                } catch (_: Exception) {}
-                mediaService?.changeVolumeBy(-1)
+                scope.launch(Dispatchers.Main) {
+                    try {
+                        audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI or AudioManager.FLAG_PLAY_SOUND)
+                        audioManager.adjustVolume(AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI or AudioManager.FLAG_PLAY_SOUND)
+                        audioManager.adjustSuggestedStreamVolume(AudioManager.ADJUST_LOWER, AudioManager.USE_DEFAULT_STREAM_TYPE, AudioManager.FLAG_SHOW_UI or AudioManager.FLAG_PLAY_SOUND)
+                    } catch (_: Exception) {}
+                    mediaService?.changeVolumeBy(-1)
+                }
             }
             CommandType.SET_PIN -> {
                 val pin = command.payload?.trim() ?: ""

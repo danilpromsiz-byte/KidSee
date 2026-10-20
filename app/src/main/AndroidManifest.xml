@@ -25,6 +25,7 @@
 
     <!-- Audio Recording (Push-to-Talk & Voice Notes) -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <!-- WakeLock & Battery Optimization Ignore for 24/7 Child Online Mode -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
@@ -32,6 +33,8 @@
 
     <!-- Foreground Services -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROJECTION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
@@ -121,6 +124,7 @@
         <!-- 24/7 Persistent Child Foreground Service -->
         <service
             android:name=".service.KidSeeChildService"
+            android:foregroundServiceType="connectedDevice|dataSync"
             android:exported="false" />
 
         <!-- Boot & Package Update Receiver to keep Child mode alive -->

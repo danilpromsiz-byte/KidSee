@@ -19,12 +19,22 @@ import timber.log.Timber
  */
 class KidSeeAccessibilityService : AccessibilityService() {
 
+    companion object {
+        var instance: KidSeeAccessibilityService? = null
+            private set
+    }
+
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var lastPackageName: String? = null
     private var lastVideoDetected: Boolean = false
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null) return
+
+        // Always guarantee KidSeeChildService is running in foreground when child device is used
+        if (!KidSeeChildService.isRunning) {
+            KidSeeChildService.start(applicationContext)
+        }
 
         when (event.eventType) {
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
@@ -123,6 +133,15 @@ class KidSeeAccessibilityService : AccessibilityService() {
 
     override fun onServiceConnected() {
         super.onServiceConnected()
+        instance = this
+        KidSeeChildService.start(applicationContext)
         Timber.d("KidSee Accessibility Service Connected")
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if (instance == this) {
+            instance = null
+        }
     }
 }

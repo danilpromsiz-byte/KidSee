@@ -24,7 +24,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.VolumeDown
+import androidx.compose.material.icons.automirrored.filled.VolumeMute
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Lock
@@ -36,9 +39,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.filled.VolumeDown
-import androidx.compose.material.icons.filled.VolumeMute
-import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
@@ -105,7 +105,7 @@ fun DeviceDetailScreen(
     onPushToTalkStart: () -> Unit,
     onPushToTalkStop: () -> Unit
 ) {
-    var isAudioMuted by remember { mutableStateOf(false) }
+    var isAudioMuted by remember { mutableStateOf(true) }
     var isTalkingLive by remember { mutableStateOf(false) }
     var volumeSlider by remember(device.currentVolume) { mutableFloatStateOf(device.currentVolume.toFloat()) }
     var currentBitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -206,7 +206,7 @@ fun DeviceDetailScreen(
         ) {
             IconButton(onClick = onBackClick) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = stringResource(R.string.btn_back)
                 )
             }
@@ -343,7 +343,7 @@ fun DeviceDetailScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = if (isAudioMuted) Icons.Default.VolumeMute else Icons.Default.VolumeUp,
+                        imageVector = if (isAudioMuted) Icons.AutoMirrored.Filled.VolumeMute else Icons.AutoMirrored.Filled.VolumeUp,
                         contentDescription = null,
                         tint = Color.White,
                         modifier = Modifier.size(14.dp)
@@ -431,13 +431,13 @@ fun DeviceDetailScreen(
         ) {
             // Mute / Unmute Sound
             KidSeePillButton(
-                text = stringResource(if (isAudioMuted) R.string.btn_hear_sound else R.string.btn_mute_sound),
+                text = stringResource(if (isAudioMuted) R.string.btn_mute_sound else R.string.btn_hear_sound),
                 onClick = { isAudioMuted = !isAudioMuted },
-                backgroundColor = if (isAudioMuted) WazeBorder else WazeBlue,
-                contentColor = if (isAudioMuted) WazeTextPrimary else Color.White,
+                backgroundColor = if (isAudioMuted) WazeBlue else WazeBorder,
+                contentColor = if (isAudioMuted) Color.White else WazeTextPrimary,
                 icon = {
                     Icon(
-                        imageVector = if (isAudioMuted) Icons.Default.VolumeMute else Icons.Default.VolumeUp,
+                        imageVector = if (isAudioMuted) Icons.AutoMirrored.Filled.VolumeMute else Icons.AutoMirrored.Filled.VolumeUp,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp)
                     )
@@ -622,7 +622,7 @@ fun DeviceDetailScreen(
                         modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.VolumeDown,
+                            imageVector = Icons.AutoMirrored.Filled.VolumeDown,
                             contentDescription = null,
                             tint = WazeTextSecondary
                         )
@@ -653,7 +653,7 @@ fun DeviceDetailScreen(
                         modifier = Modifier.size(36.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.VolumeUp,
+                            imageVector = Icons.AutoMirrored.Filled.VolumeUp,
                             contentDescription = null,
                             tint = WazeTextSecondary
                         )

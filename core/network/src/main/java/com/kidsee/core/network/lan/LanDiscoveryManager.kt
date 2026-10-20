@@ -660,8 +660,8 @@ class LanDiscoveryManager(
     suspend fun fetchDeviceStatusViaHttp(ip: String, port: Int = DISCOVERY_PORT): ChildDevice? {
         return try {
             val s = Socket()
-            s.connect(InetSocketAddress(ip, port), 300)
-            s.soTimeout = 700
+            s.connect(InetSocketAddress(ip, port), 800)
+            s.soTimeout = 1500
 
             val writer = OutputStreamWriter(s.getOutputStream(), Charsets.UTF_8)
             writer.write("GET /kidsee/status HTTP/1.1\r\nHost: $ip\r\nConnection: close\r\n\r\n")
@@ -889,8 +889,8 @@ class LanDiscoveryManager(
     private fun sendCommandViaHttp(ip: String, commandJson: String): Boolean {
         return try {
             val s = Socket()
-            s.connect(InetSocketAddress(ip, DISCOVERY_PORT), 500)
-            s.soTimeout = 800
+            s.connect(InetSocketAddress(ip, DISCOVERY_PORT), 800)
+            s.soTimeout = 1500
 
             val bytes = commandJson.toByteArray(Charsets.UTF_8)
             val writer = OutputStreamWriter(s.getOutputStream(), Charsets.UTF_8)
@@ -974,8 +974,12 @@ class LanDiscoveryManager(
                             val payload = text.removePrefix(PREFIX_COMMAND)
                             try {
                                 val command = json.decodeFromString<DeviceCommand>(payload)
-                                _incomingCommandsFlow.tryEmit(command)
-                                Timber.d("Received UDP command: ${command.type}")
+                                val selfId = activeDeviceProvider?.invoke()?.id
+                                if (command.targetDeviceId.isBlank() || command.targetDeviceId == selfId) {
+                                    _incomingCommandsFlow.tryEmit(command)
+                                    onCommandReceived?.invoke(command)
+                                    Timber.d("Received and executed UDP command: ${command.type}")
+                                }
                             } catch (e: Exception) {
                                 Timber.w(e, "Failed to parse UDP command packet")
                             }

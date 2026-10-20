@@ -17,17 +17,24 @@ import timber.log.Timber
 
 /**
  * Handles all real-time communication via Firebase Realtime Database.
+ * Failsafe: gracefully operates in offline/local mode if Firebase is not configured.
  */
 class FirebaseClient(
-    private val database: FirebaseDatabase
+    database: FirebaseDatabase? = null
 ) {
-    constructor() : this(FirebaseDatabase.getInstance())
+    private val database: FirebaseDatabase? = database ?: try {
+        FirebaseDatabase.getInstance()
+    } catch (e: Throwable) {
+        Timber.w(e, "FirebaseDatabase not available, running in offline/local mode")
+        null
+    }
 
     // --- Device Status & Heartbeat ---
 
     suspend fun updateDeviceStatus(device: ChildDevice) {
+        val db = database ?: return
         try {
-            database.getReference("families/${device.familyId}/devices/${device.id}")
+            db.getReference("families/${device.familyId}/devices/${device.id}")
                 .setValue(device)
                 .await()
         } catch (e: Exception) {
@@ -36,7 +43,12 @@ class FirebaseClient(
     }
 
     fun observeFamilyDevices(familyId: String): Flow<List<ChildDevice>> = callbackFlow {
-        val ref = database.getReference("families/$familyId/devices")
+        val db = database
+        if (db == null) {
+            awaitClose {}
+            return@callbackFlow
+        }
+        val ref = db.getReference("families/$familyId/devices")
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val devices = mutableListOf<ChildDevice>()
@@ -55,7 +67,12 @@ class FirebaseClient(
     }
 
     fun observeSingleDevice(familyId: String, deviceId: String): Flow<ChildDevice?> = callbackFlow {
-        val ref = database.getReference("families/$familyId/devices/$deviceId")
+        val db = database
+        if (db == null) {
+            awaitClose {}
+            return@callbackFlow
+        }
+        val ref = db.getReference("families/$familyId/devices/$deviceId")
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 trySend(snapshot.getValue(ChildDevice::class.java))
@@ -72,8 +89,9 @@ class FirebaseClient(
     // --- Real-time Commands (Ultra-low latency) ---
 
     suspend fun sendCommand(command: DeviceCommand) {
+        val db = database ?: return
         try {
-            val ref = database.getReference("commands/${command.targetDeviceId}").push()
+            val ref = db.getReference("commands/${command.targetDeviceId}").push()
             val commandWithId = command.copy(id = ref.key ?: System.currentTimeMillis().toString())
             ref.setValue(commandWithId).await()
             Timber.d("Command sent: ${command.type} to ${command.targetDeviceId}")
@@ -83,14 +101,18 @@ class FirebaseClient(
     }
 
     fun observeIncomingCommands(deviceId: String): Flow<DeviceCommand> = callbackFlow {
-        val ref = database.getReference("commands/$deviceId")
+        val db = database
+        if (db == null) {
+            awaitClose {}
+            return@callbackFlow
+        }
+        val ref = db.getReference("commands/$deviceId")
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (child in snapshot.children) {
                     val command = child.getValue(DeviceCommand::class.java)
                     if (command != null && command.status == CommandStatus.PENDING) {
                         trySend(command)
-                        // Acknowledge and clear command
                         child.ref.removeValue()
                     }
                 }
@@ -107,8 +129,9 @@ class FirebaseClient(
     // --- Voice Messages ---
 
     suspend fun sendVoiceMessage(message: VoiceMessage) {
+        val db = database ?: return
         try {
-            val ref = database.getReference("voice_messages/${message.targetDeviceId}").push()
+            val ref = db.getReference("voice_messages/${message.targetDeviceId}").push()
             val msgWithId = message.copy(id = ref.key ?: System.currentTimeMillis().toString())
             ref.setValue(msgWithId).await()
             Timber.d("Voice message sent to ${message.targetDeviceId}")
@@ -118,7 +141,12 @@ class FirebaseClient(
     }
 
     fun observeVoiceMessages(deviceId: String): Flow<VoiceMessage> = callbackFlow {
-        val ref = database.getReference("voice_messages/$deviceId")
+        val db = database
+        if (db == null) {
+            awaitClose {}
+            return@callbackFlow
+        }
+        val ref = db.getReference("voice_messages/$deviceId")
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 for (child in snapshot.children) {
@@ -141,9 +169,10 @@ class FirebaseClient(
     // --- Scheduling ---
 
     suspend fun saveScheduleRule(rule: ScheduleRule) {
+        val db = database ?: return
         try {
-            val key = rule.id.ifEmpty { database.getReference("schedules/${rule.deviceId}").push().key ?: "" }
-            database.getReference("schedules/${rule.deviceId}/$key")
+            val key = rule.id.ifEmpty { db.getReference("schedules/${rule.deviceId}").push().key ?: "" }
+            db.getReference("schedules/${rule.deviceId}/$key")
                 .setValue(rule.copy(id = key))
                 .await()
         } catch (e: Exception) {
@@ -152,7 +181,12 @@ class FirebaseClient(
     }
 
     fun observeSchedules(deviceId: String): Flow<List<ScheduleRule>> = callbackFlow {
-        val ref = database.getReference("schedules/$deviceId")
+        val db = database
+        if (db == null) {
+            awaitClose {}
+            return@callbackFlow
+        }
+        val ref = db.getReference("schedules/$deviceId")
         val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val rules = mutableListOf<ScheduleRule>()

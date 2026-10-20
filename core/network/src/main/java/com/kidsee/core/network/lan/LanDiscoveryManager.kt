@@ -39,6 +39,7 @@ class LanDiscoveryManager(
         private const val BROADCAST_IP = "255.255.255.255"
         private const val PREFIX_DEVICE = "KIDSEE_DEV:"
         private const val PREFIX_COMMAND = "KIDSEE_CMD:"
+        private const val PREFIX_PING = "KIDSEE_PING:"
     }
 
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -49,6 +50,9 @@ class LanDiscoveryManager(
     private var listenJob: Job? = null
     private var broadcastJob: Job? = null
     private var cleanupJob: Job? = null
+
+    private var activeDeviceProvider: (() -> ChildDevice?)? = null
+    private val knownPeerAddresses = ConcurrentHashMap.newKeySet<InetAddress>()
 
     private val discoveredDevices = ConcurrentHashMap<String, ChildDevice>()
     private val _discoveredDevicesFlow = MutableStateFlow<List<ChildDevice>>(emptyList())
@@ -62,7 +66,7 @@ class LanDiscoveryManager(
 
     @Synchronized
     fun startListening() {
-        if (isRunning) return
+        if (isRunning && socket != null && socket?.isClosed == false) return
         isRunning = true
 
         acquireMulticastLock()
@@ -82,6 +86,7 @@ class LanDiscoveryManager(
             }
         }
 
+        listenJob?.cancel()
         listenJob = scope.launch {
             val buffer = ByteArray(4096)
             while (isActive && isRunning) {
@@ -90,8 +95,27 @@ class LanDiscoveryManager(
                     val packet = DatagramPacket(buffer, buffer.size)
                     s.receive(packet)
 
+                    val senderAddress = packet.address
+                    if (senderAddress != null) {
+                        knownPeerAddresses.add(senderAddress)
+                    }
+
                     val text = String(packet.data, 0, packet.length, Charsets.UTF_8).trim()
                     when {
+                        text.startsWith(PREFIX_PING) -> {
+                            // Peer is asking for active devices
+                            val dev = activeDeviceProvider?.invoke()
+                            if (dev != null) {
+                                val payload = PREFIX_DEVICE + json.encodeToString(dev)
+                                // Reply via direct unicast to the sender
+                                if (senderAddress != null) {
+                                    sendDirectUdpPacket(payload, senderAddress, packet.port)
+                                }
+                                // Also broadcast
+                                sendUdpPacket(payload)
+                            }
+                        }
+
                         text.startsWith(PREFIX_DEVICE) -> {
                             val payload = text.removePrefix(PREFIX_DEVICE)
                             try {
@@ -101,7 +125,7 @@ class LanDiscoveryManager(
                                     val updatedDevice = device.copy(lastSeenTimestamp = now)
                                     discoveredDevices[device.id] = updatedDevice
                                     _discoveredDevicesFlow.value = discoveredDevices.values.toList()
-                                    Timber.d("Discovered LAN child device: ${device.name} (${device.id})")
+                                    Timber.d("Discovered LAN child device: ${device.name} (${device.id}) from $senderAddress")
                                 }
                             } catch (e: Exception) {
                                 Timber.w(e, "Failed to parse LAN device packet")
@@ -127,11 +151,12 @@ class LanDiscoveryManager(
             }
         }
 
+        cleanupJob?.cancel()
         cleanupJob = scope.launch {
             while (isActive && isRunning) {
                 delay(6_000L)
                 val now = System.currentTimeMillis()
-                val removed = discoveredDevices.entries.removeIf { now - it.value.lastSeenTimestamp > 15_000L }
+                val removed = discoveredDevices.entries.removeIf { now - it.value.lastSeenTimestamp > 25_000L }
                 if (removed) {
                     _discoveredDevicesFlow.value = discoveredDevices.values.toList()
                 }
@@ -140,9 +165,23 @@ class LanDiscoveryManager(
     }
 
     /**
+     * Triggers active rescan by broadcasting discovery ping probes across all interfaces.
+     */
+    fun rescan() {
+        startListening()
+        scope.launch {
+            repeat(3) {
+                sendUdpPacket(PREFIX_PING)
+                delay(120L)
+            }
+        }
+    }
+
+    /**
      * Called on child device to broadcast its status periodically to the local network.
      */
     fun startBroadcasting(deviceProvider: () -> ChildDevice?) {
+        activeDeviceProvider = deviceProvider
         startListening()
 
         broadcastJob?.cancel()
@@ -162,6 +201,10 @@ class LanDiscoveryManager(
             try {
                 val payload = PREFIX_DEVICE + json.encodeToString(device)
                 sendUdpPacket(payload)
+                // Also send direct unicast to any known parent addresses
+                for (peer in knownPeerAddresses) {
+                    sendDirectUdpPacket(payload, peer, DISCOVERY_PORT)
+                }
             } catch (e: Exception) {
                 Timber.w(e, "Failed to broadcast LAN device")
             }
@@ -173,6 +216,9 @@ class LanDiscoveryManager(
             try {
                 val payload = PREFIX_COMMAND + json.encodeToString(command)
                 sendUdpPacket(payload)
+                for (peer in knownPeerAddresses) {
+                    sendDirectUdpPacket(payload, peer, DISCOVERY_PORT)
+                }
                 Timber.d("Sent LAN command: ${command.type} to ${command.targetDeviceId}")
             } catch (e: Exception) {
                 Timber.e(e, "Failed to send LAN command")
@@ -180,25 +226,66 @@ class LanDiscoveryManager(
         }
     }
 
-    private fun sendUdpPacket(text: String) {
+    private fun getBroadcastAddresses(): List<InetAddress> {
+        val list = mutableListOf<InetAddress>()
+        try {
+            list.add(InetAddress.getByName(BROADCAST_IP))
+            val interfaces = java.net.NetworkInterface.getNetworkInterfaces() ?: return list
+            while (interfaces.hasMoreElements()) {
+                val iface = interfaces.nextElement()
+                if (iface.isLoopback || !iface.isUp) continue
+                for (ifAddr in iface.interfaceAddresses) {
+                    val bcast = ifAddr.broadcast
+                    if (bcast != null && !list.contains(bcast)) {
+                        list.add(bcast)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "Error collecting broadcast addresses")
+        }
+        return list
+    }
+
+    private fun sendDirectUdpPacket(text: String, address: InetAddress, port: Int) {
         try {
             val data = text.toByteArray(Charsets.UTF_8)
-            val address = InetAddress.getByName(BROADCAST_IP)
-            val packet = DatagramPacket(data, data.size, address, DISCOVERY_PORT)
-
+            val packet = DatagramPacket(data, data.size, address, port)
             val s = socket ?: DatagramSocket().apply { broadcast = true }
             s.send(packet)
         } catch (e: Exception) {
-            Timber.w(e, "Failed to send UDP packet")
+            Timber.w(e, "Failed to send direct UDP packet to $address:$port")
+        }
+    }
+
+    private fun sendUdpPacket(text: String) {
+        try {
+            val data = text.toByteArray(Charsets.UTF_8)
+            val addresses = getBroadcastAddresses()
+            val s = socket ?: DatagramSocket().apply { broadcast = true }
+
+            for (addr in addresses) {
+                try {
+                    val packet = DatagramPacket(data, data.size, addr, DISCOVERY_PORT)
+                    s.send(packet)
+                } catch (e: Exception) {
+                    Timber.w(e, "Failed to send to broadcast $addr")
+                }
+            }
+        } catch (e: Exception) {
+            Timber.w(e, "Failed to send UDP broadcast packets")
         }
     }
 
     private fun acquireMulticastLock() {
         try {
-            val wifi = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
-            multicastLock = wifi?.createMulticastLock("KidSeeLanLock")?.apply {
-                setReferenceCounted(true)
-                acquire()
+            if (multicastLock == null || multicastLock?.isHeld == false) {
+                val wifi = context.applicationContext.getSystemService(Context.WIFI_SERVICE) as? WifiManager
+                multicastLock = wifi?.createMulticastLock("KidSeeLanLock")?.apply {
+                    setReferenceCounted(false)
+                    acquire()
+                }
+                Timber.d("MulticastLock acquired successfully")
             }
         } catch (e: Exception) {
             Timber.w(e, "Could not acquire MulticastLock")

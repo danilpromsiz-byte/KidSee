@@ -116,6 +116,7 @@ class MainActivity : AppCompatActivity() {
         val roleState by repository.userRoleFlow.collectAsState(initial = null)
         val isSetupComplete by repository.isSetupCompleteFlow.collectAsState(initial = false)
         val parentPin by repository.parentPinFlow.collectAsState(initial = "1234")
+        val familyId by repository.familyIdFlow.collectAsState(initial = "KID-7777")
         val currentLanguage by repository.languageFlow.collectAsState(initial = LocaleHelper.getPersistedLanguage(this@MainActivity))
         val childState by app.stateManager.currentDeviceState.collectAsState()
         val updateState by appUpdateManager.updateState.collectAsState()
@@ -156,7 +157,15 @@ class MainActivity : AppCompatActivity() {
         // Add Device Dialog
         if (showAddDeviceDialog) {
             AddDeviceDialog(
-                familyId = "KID-FAMILY-1",
+                familyId = familyId,
+                onUpdateFamilyId = { newFamilyId ->
+                    scope.launch {
+                        repository.saveFamilyId(newFamilyId)
+                    }
+                },
+                onRescan = {
+                    app.stateManager.lanDiscoveryManager.rescan()
+                },
                 onDismiss = { showAddDeviceDialog = false }
             )
         }
@@ -166,10 +175,17 @@ class MainActivity : AppCompatActivity() {
             SettingsDialog(
                 currentVersion = appUpdateManager.getCurrentVersionName(),
                 updateState = updateState,
+                familyId = familyId,
                 currentLanguage = currentLanguage,
                 onCheckUpdate = {
                     scope.launch {
                         appUpdateManager.checkForUpdates(isManual = true)
+                    }
+                },
+                onUpdateFamilyId = { newFamilyId ->
+                    scope.launch {
+                        repository.saveFamilyId(newFamilyId)
+                        Toast.makeText(this@MainActivity, "Код семьи изменен: $newFamilyId", Toast.LENGTH_SHORT).show()
                     }
                 },
                 onChangePin = {
@@ -237,8 +253,8 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val familyDevicesFlow = remember {
-            repository.observeFamilyDevices("default_family")
+        val familyDevicesFlow = remember(familyId) {
+            repository.observeFamilyDevices(familyId)
         }
 
         val isTv = isAndroidTv()
@@ -334,6 +350,10 @@ class MainActivity : AppCompatActivity() {
                         },
                         onAddDeviceClick = {
                             showAddDeviceDialog = true
+                        },
+                        onRescanClick = {
+                            app.stateManager.lanDiscoveryManager.rescan()
+                            Toast.makeText(this@MainActivity, "Поиск устройств в Wi-Fi сети...", Toast.LENGTH_SHORT).show()
                         },
                         onCheckUpdateClick = {
                             scope.launch {

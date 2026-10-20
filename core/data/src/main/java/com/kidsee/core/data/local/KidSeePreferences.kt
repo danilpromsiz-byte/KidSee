@@ -32,8 +32,8 @@ class KidSeePreferences(private val context: Context) {
         prefs[KEY_ROLE]?.let { runCatching { UserRole.valueOf(it) }.getOrNull() }
     }
 
-    val familyIdFlow: Flow<String?> = context.dataStore.data.map { prefs ->
-        prefs[KEY_FAMILY_ID]
+    val familyIdFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_FAMILY_ID] ?: "KID-7777"
     }
 
     val deviceIdFlow: Flow<String> = context.dataStore.data.map { prefs ->

@@ -17,19 +17,23 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Password
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.SystemUpdate
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.BasicAlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,15 +66,63 @@ import kotlinx.coroutines.launch
 fun SettingsDialog(
     currentVersion: String,
     updateState: UpdateState,
+    familyId: String = "KID-7777",
     currentLanguage: String = "ru",
     onCheckUpdate: () -> Unit,
     onChangePin: () -> Unit,
     onSwitchRole: () -> Unit,
+    onUpdateFamilyId: (String) -> Unit = {},
     onLanguageChanged: (String) -> Unit = {},
     onDismiss: () -> Unit
 ) {
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var selectedLang by remember { mutableStateOf(currentLanguage) }
+    var showEditFamilyDialog by remember { mutableStateOf(false) }
+
+    if (showEditFamilyDialog) {
+        var tempCode by remember { mutableStateOf(familyId) }
+        AlertDialog(
+            onDismissRequest = { showEditFamilyDialog = false },
+            title = {
+                Text(
+                    text = "Код семьи",
+                    style = KidSeeTypography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = {
+                Column {
+                    Text(
+                        text = "Задайте общий код для синхронизации устройств:",
+                        style = KidSeeTypography.bodyMedium.copy(color = WazeTextSecondary)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = tempCode,
+                        onValueChange = { tempCode = it.trim().uppercase() },
+                        singleLine = true,
+                        placeholder = { Text("Например: SEMYA-1 или 7777") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    if (tempCode.isNotBlank()) {
+                        onUpdateFamilyId(tempCode)
+                        showEditFamilyDialog = false
+                    }
+                }) {
+                    Text("Сохранить", fontWeight = FontWeight.Bold, color = WazeBlue)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEditFamilyDialog = false }) {
+                    Text("Отмена", color = WazeTextSecondary)
+                }
+            }
+        )
+    }
 
     val languages = listOf(
         "ru" to "Русский",
@@ -178,7 +230,18 @@ fun SettingsDialog(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // 3. Switch Role (Parent <-> Child)
+                // 3. Family Code
+                SettingsActionCard(
+                    icon = Icons.Default.Group,
+                    title = "Код семьи",
+                    subtitle = "Текущий код: $familyId (нажмите для изменения)",
+                    iconTint = WazeBlue,
+                    onClick = { showEditFamilyDialog = true }
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // 4. Switch Role (Parent <-> Child)
                 SettingsActionCard(
                     icon = Icons.Default.SwapHoriz,
                     title = "Сменить режим",
@@ -189,7 +252,7 @@ fun SettingsDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 4. Language Selector
+                // 5. Language Selector
                 Text(
                     text = "Язык приложения",
                     style = KidSeeTypography.labelMedium.copy(

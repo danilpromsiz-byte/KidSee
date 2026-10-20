@@ -78,10 +78,10 @@ class KidSeeStateManager(
         // 1. Start Heartbeat Loop
         heartbeatJob = scope.launch {
             val deviceId = repository.deviceIdFlow.first()
-            val familyId = repository.familyIdFlow.firstOrNull() ?: "demo_family"
             val deviceType = detectDeviceType()
 
             while (isActive) {
+                val familyId = repository.familyIdFlow.first()
                 val batteryInfo = getBatteryInfo()
                 val mediaService = KidSeeMediaMonitorService.instance
                 val volume = mediaService?.getCurrentVolumePercent() ?: 50

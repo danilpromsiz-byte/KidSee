@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.PictureInPicture
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.SystemUpdate
@@ -33,6 +34,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -74,6 +76,7 @@ fun ParentDashboardScreen(
     onLockToggle: (ChildDevice) -> Unit,
     onAddDeviceClick: () -> Unit,
     onCheckUpdateClick: () -> Unit = {},
+    onRescanClick: () -> Unit = {},
     onLockClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
     isTv: Boolean = false
@@ -113,6 +116,16 @@ fun ParentDashboardScreen(
                     )
                 }
 
+                // Rescan Wi-Fi Devices Button
+                IconButton(onClick = onRescanClick) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = "Rescan devices",
+                        tint = WazeBlue,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
                 // Check for Updates Button
                 IconButton(onClick = onCheckUpdateClick) {
                     Icon(
@@ -148,7 +161,10 @@ fun ParentDashboardScreen(
 
             if (devices.isEmpty()) {
                 // Empty state
-                EmptyDevicesView(onAddDeviceClick = onAddDeviceClick)
+                EmptyDevicesView(
+                    onAddDeviceClick = onAddDeviceClick,
+                    onRescanClick = onRescanClick
+                )
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
@@ -338,7 +354,10 @@ private fun DeviceCardContent(
 }
 
 @Composable
-private fun EmptyDevicesView(onAddDeviceClick: () -> Unit) {
+private fun EmptyDevicesView(
+    onAddDeviceClick: () -> Unit,
+    onRescanClick: () -> Unit = {}
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -367,5 +386,22 @@ private fun EmptyDevicesView(onAddDeviceClick: () -> Unit) {
                 .fillMaxWidth(0.9f)
                 .padding(horizontal = 4.dp)
         )
+        Spacer(modifier = Modifier.height(10.dp))
+        TextButton(onClick = onRescanClick) {
+            Icon(
+                imageVector = Icons.Default.Refresh,
+                contentDescription = null,
+                tint = WazeBlue,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(
+                text = "Повторить поиск в Wi-Fi",
+                style = KidSeeTypography.bodyMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = WazeBlue
+                )
+            )
+        }
     }
 }

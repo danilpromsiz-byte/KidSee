@@ -96,6 +96,22 @@ fun ChildActiveScreen(
             textColor = WazeGreen
         )
 
+        Spacer(modifier = Modifier.height(10.dp))
+
+        Surface(
+            shape = RoundedCornerShape(percent = 50),
+            color = WazeBlue.copy(alpha = 0.1f)
+        ) {
+            Text(
+                text = "Код семьи: ${device?.familyId?.ifEmpty { "KID-7777" } ?: "KID-7777"}",
+                style = KidSeeTypography.labelMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = WazeBlue
+                ),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
+            )
+        }
+
         Spacer(modifier = Modifier.height(32.dp))
 
         // Protection summary card

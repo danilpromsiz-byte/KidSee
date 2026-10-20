@@ -72,6 +72,27 @@ class KidSeeStateManager(
     fun startChildServices() {
         stopChildServices()
 
+        // Synchronous initial state to avoid null state in server / broadcast
+        val syncDeviceId = android.provider.Settings.Secure.getString(
+            context.contentResolver,
+            android.provider.Settings.Secure.ANDROID_ID
+        ) ?: ("dev_" + Build.MODEL.hashCode().toString())
+
+        val syncInitial = ChildDevice(
+            id = syncDeviceId,
+            familyId = "KID-7777",
+            name = Build.MODEL,
+            deviceType = detectDeviceType(),
+            status = DeviceStatus.ONLINE,
+            batteryPercent = getBatteryInfo().first,
+            isCharging = getBatteryInfo().second,
+            lastSeenTimestamp = System.currentTimeMillis()
+        )
+        _currentDeviceState.value = syncInitial
+
+        // 0. Start LAN embedded server & broadcasting of child state
+        lanDiscoveryManager.startBroadcasting { _currentDeviceState.value }
+
         scope.launch {
             val deviceId = repository.deviceIdFlow.first()
             val familyId = repository.familyIdFlow.first()
@@ -94,11 +115,9 @@ class KidSeeStateManager(
                 isCharging = batteryInfo.second
             )
             _currentDeviceState.value = initialDevice
+            lanDiscoveryManager.registerNsdService(initialDevice)
             lanDiscoveryManager.broadcastDevice(initialDevice)
         }
-
-        // 0. Start LAN broadcasting of child state
-        lanDiscoveryManager.startBroadcasting { _currentDeviceState.value }
 
         // 1. Start Heartbeat Loop
         heartbeatJob = scope.launch {
@@ -219,6 +238,8 @@ class KidSeeStateManager(
                             val updated = current.copy(familyId = newFamilyId)
                             _currentDeviceState.value = updated
                             repository.updateDeviceStatus(updated)
+                            lanDiscoveryManager.registerNsdService(updated)
+                            lanDiscoveryManager.broadcastDevice(updated)
                         }
                         Timber.d("Child family ID updated to $newFamilyId")
                     }
@@ -236,6 +257,8 @@ class KidSeeStateManager(
                                 val updated = current.copy(familyId = newFamilyId)
                                 _currentDeviceState.value = updated
                                 repository.updateDeviceStatus(updated)
+                                lanDiscoveryManager.registerNsdService(updated)
+                                lanDiscoveryManager.broadcastDevice(updated)
                             }
                             Timber.d("Child family ID updated to $newFamilyId")
                         }

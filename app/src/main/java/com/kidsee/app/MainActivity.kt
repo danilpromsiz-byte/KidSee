@@ -18,6 +18,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -26,10 +27,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.core.os.LocaleListCompat
 import com.kidsee.app.ui.child.ChildActiveScreen
+import com.kidsee.app.ui.components.UpdateDialog
 import com.kidsee.app.ui.onboarding.ChildSetupScreen
 import com.kidsee.app.ui.onboarding.OnboardingScreen
 import com.kidsee.app.ui.parent.DeviceDetailScreen
 import com.kidsee.app.ui.parent.ParentDashboardScreen
+import com.kidsee.app.util.AppUpdateManager
+import com.kidsee.app.util.UpdateState
 import com.kidsee.core.domain.model.ChildDevice
 import com.kidsee.core.domain.model.CommandType
 import com.kidsee.core.domain.model.DeviceCommand
@@ -49,6 +53,7 @@ class MainActivity : ComponentActivity() {
 
     private var isInPipMode by mutableStateOf(false)
     private var selectedDevice by mutableStateOf<ChildDevice?>(null)
+    private val appUpdateManager by lazy { AppUpdateManager(this) }
 
     private val pipReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -100,6 +105,24 @@ class MainActivity : ComponentActivity() {
         val roleState by repository.userRoleFlow.collectAsState(initial = null)
         val isSetupComplete by repository.isSetupCompleteFlow.collectAsState(initial = false)
         val childState by app.stateManager.currentDeviceState.collectAsState()
+        val updateState by appUpdateManager.updateState.collectAsState()
+        var showUpdateDialog by remember { mutableStateOf(true) }
+
+        LaunchedEffect(Unit) {
+            appUpdateManager.checkForUpdates()
+        }
+
+        if (showUpdateDialog && (updateState is UpdateState.UpdateAvailable || updateState is UpdateState.Downloading)) {
+            UpdateDialog(
+                updateState = updateState,
+                onDismiss = { showUpdateDialog = false },
+                onUpdateClick = { releaseInfo ->
+                    scope.launch {
+                        appUpdateManager.downloadAndInstall(releaseInfo)
+                    }
+                }
+            )
+        }
 
         val familyDevicesFlow = remember {
             MutableStateFlow<List<ChildDevice>>(

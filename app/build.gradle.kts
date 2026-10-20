@@ -29,6 +29,8 @@ android {
             storePassword = "kidseepass"
             keyAlias = "kidsee"
             keyPassword = "kidseepass"
+            enableV1Signing = true
+            enableV2Signing = true
         }
     }
 
@@ -146,7 +148,7 @@ tasks.matching { it.name in listOf("assembleDebug", "assembleRelease") }.configu
             val destApp = File(rootDir, "app-debug.apk")
             src.copyTo(destKidSee, overwrite = true)
             src.copyTo(destApp, overwrite = true)
-            logger.lifecycle("Successfully copied finished APK to: \${destKidSee.absolutePath}")
+            logger.lifecycle("Successfully copied finished APK to: " + destKidSee.absolutePath)
         }
     }
 }

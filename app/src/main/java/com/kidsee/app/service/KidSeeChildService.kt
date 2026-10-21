@@ -80,16 +80,11 @@ class KidSeeChildService : Service() {
                 startForeground(
                     NOTIFICATION_ID,
                     notification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
                 )
             } catch (e: Exception) {
-                Timber.e(e, "Failed to start foreground with connectedDevice|dataSync, falling back")
-                try {
-                    startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
-                } catch (e2: Exception) {
-                    Timber.e(e2, "Failed to start foreground with connectedDevice")
-                    startForeground(NOTIFICATION_ID, notification)
-                }
+                Timber.e(e, "Failed to start foreground with connectedDevice, falling back")
+                startForeground(NOTIFICATION_ID, notification)
             }
         } else {
             startForeground(NOTIFICATION_ID, notification)

@@ -8,14 +8,14 @@ plugins {
 
 android {
     namespace = "com.kidsee.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.kidsee.app"
         minSdk = 26
-        targetSdk = 35
-        versionCode = 15
-        versionName = "1.0.14"
+        targetSdk = 36
+        versionCode = 16
+        versionName = "1.0.15"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

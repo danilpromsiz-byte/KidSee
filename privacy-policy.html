@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Политика конфиденциальности — KidSee</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #2D3748;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 24px;
+            background-color: #F7FAFC;
+        }
+        .container {
+            background: #FFFFFF;
+            padding: 36px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+        }
+        h1 { color: #2B6CB0; margin-top: 0; font-size: 28px; }
+        h2 { color: #2D3748; border-bottom: 2px solid #EDF2F7; padding-bottom: 8px; margin-top: 28px; font-size: 20px; }
+        h3 { color: #4A5568; font-size: 16px; margin-top: 20px; }
+        p, li { font-size: 15px; }
+        .highlight-box {
+            background-color: #EBF8FF;
+            border-left: 4px solid #3182CE;
+            padding: 16px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .lang-switch {
+            text-align: right;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        .lang-switch a {
+            color: #3182CE;
+            text-decoration: none;
+            margin-left: 10px;
+            font-weight: 600;
+        }
+        footer {
+            margin-top: 36px;
+            font-size: 13px;
+            color: #718096;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="lang-switch">
+        <a href="#ru">Русский</a> | <a href="#en">English</a>
+    </div>
+
+    <!-- RU SECTION -->
+    <div id="ru">
+        <h1>Политика конфиденциальности приложения KidSee</h1>
+        <p><strong>Дата последнего обновления:</strong> 21 октября 2026 г.</p>
+
+        <p>Настоящая Политика конфиденциальности регулирует порядок обработки информации мобильным приложением <strong>KidSee</strong> (идентификатор пакета: <code>com.kidsee.app</code>), разработанным для обеспечения безопасности детей и родительского контроля на устройствах под управлением Android (включая смартфоны, планшеты и Android TV).</p>
+
+        <div class="highlight-box">
+            <strong>Главный принцип приватности:</strong><br>
+            KidSee работает по технологии <strong>локальной сети (Local Area Network / Wi-Fi)</strong>. Изображение с экрана ребенка, аудиосообщения и команды передаются напрямую между устройствами родителя и ребенка внутри вашей домашней сети Wi-Fi без отправки видео- и аудиопотоков на сторонние облачные сервера.
+        </div>
+
+        <h2>1. Назначение приложения и специальные разрешения</h2>
+        <p>KidSee является программным обеспечением родительского контроля. Для выполнения основных заявленных функций приложение запрашивает следующие специальные разрешения:</p>
+
+        <h3>1.1. Использование AccessibilityService API (Специальные возможности)</h3>
+        <p>Приложение KidSee использует <code>AccessibilityService API</code> исключительно со следующими целями:</p>
+        <ul>
+            <li>Определение имени активного приложения на детском устройстве (для информирования родителя о том, в какой программе находится ребенок).</li>
+            <li>Анализ наличия элементов воспроизведения видео (например, в YouTube, онлайн-кинотеатрах) для предоставления родителю функций удаленной паузы/воспроизведения.</li>
+            <li>Применение ограничений экранного времени и блокировка экрана по расписанию, установленному родителем.</li>
+        </ul>
+        <p><strong>Важное раскрытие информации:</strong> AccessibilityService API <strong>НЕ используется</strong> для скрытого шпионажа, перехвата вводимого текста (кейлоггинга), чтения личных переписок, банковских паролей или передачи персональных данных третьим лицам.</p>
+
+        <h3>1.2. Использование MediaProjection API (Трансляция экрана)</h3>
+        <p>Приложение запрашивает разрешение на захват экрана исключительно для передачи живого изображения экрана детского устройства на устройство родителя в режиме реального времени. Стрим экрана передается только внутри локальной сети Wi-Fi, не сохраняется на постоянных серверах и запускается только с явного согласия пользователя через стандартный системный диалог Android.</p>
+
+        <h3>1.3. Микрофон и аудиозапись (RECORD_AUDIO)</h3>
+        <p>Разрешение на доступ к микрофону используется родительским устройством исключительно в момент нажатия кнопки «Удерживайте для связи» для отправки коротких голосовых заметок ребенку (режим рации). Записи передаются локально на устройство ребенка и автоматически удаляются из временного кэша.</p>
+
+        <h3>1.4. Фоновые службы (Foreground Services)</h3>
+        <p>Приложение использует типы служб <code>connectedDevice</code>, <code>dataSync</code>, <code>mediaProjection</code> и <code>microphone</code> для поддержания стабильной связи между родительским и детским устройством в фоновом режиме даже при выключенном экране или работе других программ.</p>
+
+        <h2>2. Безопасность и хранение данных</h2>
+        <ul>
+            <li><strong>Хранение данных:</strong> Все настройки (PIN-код, ID семьи, список сопряженных устройств) сохраняются локально в зашифрованном хранилище DataStore/SharedPreferences устройства.</li>
+            <li><strong>Шифрование:</strong> Передача команд и данных по локальной сети защищена и изолирована домашней сетью.</li>
+            <li><strong>Удаление данных:</strong> Пользователь в любой момент может удалить сопряженные устройства, очистить кэш приложения или отозвать разрешения через меню «Настройки».</li>
+        </ul>
+
+        <h2>3. Защита конфиденциальности детей (COPPA и GDPR-K)</h2>
+        <p>KidSee полностью соблюдает требования законодательства о защите конфиденциальности детей в Интернете (COPPA) и регламента GDPR:</p>
+        <ul>
+            <li>Приложение не собирает персональные данные детей для маркетинга, профилирования или таргетинга.</li>
+            <li>В приложении полностью <strong>отсутствует реклама</strong> (No Ads) и сторонние аналитические трекеры поведения.</li>
+            <li>Все функции мониторинга находятся под полным контролем родителей.</li>
+        </ul>
+
+        <h2>4. Контактная информация</h2>
+        <p>Если у вас возникли вопросы относительно настоящей Политики конфиденциальности или работы приложения KidSee, вы можете связаться с нами по электронной почте: <a href="mailto:support@kidsee.app">support@kidsee.app</a>.</p>
+    </div>
+
+    <hr style="margin: 40px 0; border: 0; border-top: 1px solid #E2E8F0;">
+
+    <!-- EN SECTION -->
+    <div id="en">
+        <h1>Privacy Policy — KidSee</h1>
+        <p><strong>Last updated:</strong> October 21, 2026</p>
+
+        <p>This Privacy Policy governs the manner in which <strong>KidSee</strong> (package: <code>com.kidsee.app</code>) handles data. KidSee is a parental control application designed to assist parents in supervising child activity on Android devices (phones, tablets, and Android TV).</p>
+
+        <div class="highlight-box">
+            <strong>Core Privacy Architecture:</strong><br>
+            KidSee operates primarily over a <strong>Local Area Network (LAN / Wi-Fi)</strong>. Child screen mirroring, voice intercom messages, and remote controls stream directly device-to-device across your private local network without relaying audio/video through external cloud servers.
+        </div>
+
+        <h2>1. AccessibilityService API Disclosure</h2>
+        <p>KidSee uses the Android <code>AccessibilityService API</code> solely to provide parental control functionality:</p>
+        <ul>
+            <li>To identify the currently active foreground application to keep parents informed of their child's digital activity.</li>
+            <li>To inspect whether video playback elements are active (e.g. YouTube, media players) to provide parents with remote pause/play controls.</li>
+            <li>To enforce screen lock rules and schedules set by the parent.</li>
+        </ul>
+        <p><strong>Prominent Disclosure:</strong> The AccessibilityService API is <strong>never</strong> used to record keystrokes, capture passwords, read private chats, or collect sensitive personal data.</p>
+
+        <h2>2. Screen Capture (MediaProjection API)</h2>
+        <p>Screen capture is used solely to stream the child device screen to the authorized parent device on demand over the local Wi-Fi network. No video recordings are uploaded to external public servers.</p>
+
+        <h2>3. Audio & Voice Intercom</h2>
+        <p>The microphone permission (<code>RECORD_AUDIO</code>) is used exclusively on the parent device during push-to-talk interactions to transmit audio notes to the child device. Audio recordings are stored temporarily in cache and are not shared with third parties.</p>
+
+        <h2>4. Children's Privacy (COPPA & GDPR-K Compliance)</h2>
+        <ul>
+            <li>KidSee contains <strong>zero third-party advertisements</strong>.</li>
+            <li>KidSee does not track, sell, or monetize children's data.</li>
+            <li>All administrative settings are safeguarded by a Parent PIN code.</li>
+        </ul>
+
+        <h2>5. Contact Us</h2>
+        <p>If you have any questions or requests regarding your data, please contact us at: <a href="mailto:support@kidsee.app">support@kidsee.app</a>.</p>
+    </div>
+
+    <footer>
+        &copy; 2026 KidSee Team. Все права защищены.
+    </footer>
+</div>
+
+</body>
+</html>

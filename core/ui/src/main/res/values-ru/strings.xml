@@ -127,7 +127,7 @@
     <!-- Settings Dialog -->
     <string name="settings_title">Настройки</string>
     <string name="check_updates_title">Проверить обновления</string>
-    <string name="check_updates_desc">Поиск новой версии на GitHub</string>
+    <string name="check_updates_desc">Проверить обновление в Google Play</string>
     <string name="update_checking">Проверка сервера…</string>
     <string name="update_available_badge">🔥 Доступна новая версия!</string>
     <string name="update_up_to_date">Установлена актуальная версия</string>

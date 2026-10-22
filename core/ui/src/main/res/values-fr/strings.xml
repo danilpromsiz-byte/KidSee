@@ -127,7 +127,7 @@
     <!-- Settings Dialog -->
     <string name="settings_title">Paramètres</string>
     <string name="check_updates_title">Vérifier les mises à jour</string>
-    <string name="check_updates_desc">Vérifier la dernière version sur GitHub</string>
+    <string name="check_updates_desc">Vérifier les mises à jour sur Google Play</string>
     <string name="update_checking">Vérification sur le serveur…</string>
     <string name="update_available_badge">🔥 Nouvelle version disponible !</string>
     <string name="update_up_to_date">Dernière version installée</string>

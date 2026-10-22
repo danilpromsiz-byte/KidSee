@@ -43,39 +43,9 @@ class AppUpdateManager(
     }
 
     suspend fun checkForUpdates(isManual: Boolean = false) {
-        _updateState.value = UpdateState.Checking
         if (isManual) {
             withContext(Dispatchers.Main) {
-                Toast.makeText(context, context.getString(R.string.update_checking), Toast.LENGTH_SHORT).show()
-            }
-        }
-        try {
-            val release = updateClient.checkLatestRelease()
-            if (release != null) {
-                val currentVersion = getCurrentVersionName()
-                val serverTag = release.tagName.removePrefix("v").trim()
-                if (isNewerVersion(serverTag, currentVersion)) {
-                    _updateState.value = UpdateState.UpdateAvailable(release)
-                    return
-                }
-            }
-            _updateState.value = UpdateState.UpToDate
-            if (isManual) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        context,
-                        "${context.getString(R.string.update_up_to_date)} (${getCurrentVersionName()})",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        } catch (e: Exception) {
-            Timber.e(e, "Check for updates failed")
-            _updateState.value = UpdateState.Error("Failed to check updates: ${e.message}")
-            if (isManual) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
+                openGooglePlay()
             }
         }
     }

@@ -232,9 +232,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            LaunchedEffect(Unit) {
-                appUpdateManager.checkForUpdates(isManual = false)
-            }
 
             if (showUpdateDialog || updateState is UpdateState.UpdateAvailable) {
                 UpdateDialog(

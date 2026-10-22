@@ -127,7 +127,7 @@
     <!-- Settings Dialog -->
     <string name="settings_title">Ajustes</string>
     <string name="check_updates_title">Buscar actualizaciones</string>
-    <string name="check_updates_desc">Buscar nueva versión en GitHub</string>
+    <string name="check_updates_desc">Buscar actualizaciones en Google Play</string>
     <string name="update_checking">Comprobando servidor…</string>
     <string name="update_available_badge">🔥 ¡Nueva versión disponible!</string>
     <string name="update_up_to_date">Última versión instalada</string>

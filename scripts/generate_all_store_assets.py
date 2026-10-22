@@ -1,7 +1,7 @@
 import os
 from PIL import Image, ImageDraw, ImageFont
 
-BASE_DIR = r"C:\WORK\KidScreen\google_play_assets"
+BASE_DIR = os.path.abspath("google_play_assets")
 EN_DIR = os.path.join(BASE_DIR, "en")
 RU_DIR = os.path.join(BASE_DIR, "ru")
 os.makedirs(EN_DIR, exist_ok=True)

@@ -3,6 +3,7 @@ package com.kidsee.app.service
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.kidsee.app.KidSeeApp
@@ -129,6 +130,30 @@ class KidSeeAccessibilityService : AccessibilityService() {
 
     override fun onInterrupt() {
         Timber.d("AccessibilityService interrupted")
+    }
+
+    fun lockDeviceScreen(): Boolean {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                val ok = performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN)
+                Timber.d("Accessibility performGlobalAction(GLOBAL_ACTION_LOCK_SCREEN): $ok")
+                ok
+            } else {
+                performGlobalAction(GLOBAL_ACTION_HOME)
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Error locking screen via AccessibilityService")
+            false
+        }
+    }
+
+    fun goToHomeScreen(): Boolean {
+        return try {
+            performGlobalAction(GLOBAL_ACTION_HOME)
+        } catch (e: Exception) {
+            Timber.e(e, "Error returning home via AccessibilityService")
+            false
+        }
     }
 
     override fun onServiceConnected() {

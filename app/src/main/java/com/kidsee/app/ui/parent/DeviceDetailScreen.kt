@@ -105,7 +105,11 @@ fun DeviceDetailScreen(
     onPushToTalkStart: () -> Unit,
     onPushToTalkStop: () -> Unit
 ) {
-    var isAudioMuted by remember { mutableStateOf(true) }
+    var lastNonZeroVolume by remember { mutableStateOf(if (device.currentVolume > 0) device.currentVolume else 50) }
+    if (device.currentVolume > 0) {
+        lastNonZeroVolume = device.currentVolume
+    }
+    val isAudioMuted = device.currentVolume == 0
     var isTalkingLive by remember { mutableStateOf(false) }
     var volumeSlider by remember(device.currentVolume) { mutableFloatStateOf(device.currentVolume.toFloat()) }
     var currentBitmap by remember { mutableStateOf<Bitmap?>(null) }
@@ -120,21 +124,39 @@ fun DeviceDetailScreen(
         }
     }
 
-    // Real-time polling loop for child screen frames over Wi-Fi (~8 fps)
+    // Real-time streaming loop for child screen frames over Wi-Fi
     LaunchedEffect(device.id, lanDiscoveryManager) {
         while (isActive) {
-            val frameBytes = withContext(Dispatchers.IO) {
-                lanDiscoveryManager?.fetchScreenFrame(device.id)
-            }
-            if (frameBytes != null && frameBytes.isNotEmpty()) {
-                val bmp = BitmapFactory.decodeByteArray(frameBytes, 0, frameBytes.size)
-                if (bmp != null) {
-                    currentBitmap = bmp
+            var receivedFrames = false
+            try {
+                lanDiscoveryManager?.streamScreenFrames(device.id)?.collect { frameBytes ->
+                    if (frameBytes.isNotEmpty()) {
+                        val bmp = BitmapFactory.decodeByteArray(frameBytes, 0, frameBytes.size)
+                        if (bmp != null) {
+                            currentBitmap = bmp
+                            receivedFrames = true
+                        }
+                    }
                 }
-            } else if (!device.isOnline) {
+            } catch (_: Exception) {}
+
+            // Fallback: poll a single frame if stream endpoint was not supported or disconnected
+            if (!receivedFrames && isActive) {
+                val frameBytes = withContext(Dispatchers.IO) {
+                    lanDiscoveryManager?.fetchScreenFrame(device.id)
+                }
+                if (frameBytes != null && frameBytes.isNotEmpty()) {
+                    val bmp = BitmapFactory.decodeByteArray(frameBytes, 0, frameBytes.size)
+                    if (bmp != null) {
+                        currentBitmap = bmp
+                    }
+                }
+            }
+
+            if (!device.isOnline) {
                 currentBitmap = null
             }
-            delay(120)
+            delay(500)
         }
     }
 
@@ -429,12 +451,22 @@ fun DeviceDetailScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Mute / Unmute Sound
+            // Mute / Unmute Sound (Sends instant volume 0 or restores previous level)
             KidSeePillButton(
-                text = stringResource(if (isAudioMuted) R.string.btn_mute_sound else R.string.btn_hear_sound),
-                onClick = { isAudioMuted = !isAudioMuted },
-                backgroundColor = if (isAudioMuted) WazeBlue else WazeBorder,
-                contentColor = if (isAudioMuted) Color.White else WazeTextPrimary,
+                text = stringResource(if (isAudioMuted) R.string.btn_hear_sound else R.string.btn_mute_sound),
+                onClick = {
+                    if (isAudioMuted) {
+                        val restore = if (lastNonZeroVolume > 0) lastNonZeroVolume else 50
+                        volumeSlider = restore.toFloat()
+                        onVolumeChanged(restore)
+                    } else {
+                        lastNonZeroVolume = if (device.currentVolume > 0) device.currentVolume else 50
+                        volumeSlider = 0f
+                        onVolumeChanged(0)
+                    }
+                },
+                backgroundColor = if (isAudioMuted) WazeBorder else WazeBlue,
+                contentColor = if (isAudioMuted) WazeTextPrimary else Color.White,
                 icon = {
                     Icon(
                         imageVector = if (isAudioMuted) Icons.AutoMirrored.Filled.VolumeMute else Icons.AutoMirrored.Filled.VolumeUp,

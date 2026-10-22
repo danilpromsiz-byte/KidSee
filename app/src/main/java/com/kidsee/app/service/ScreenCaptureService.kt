@@ -56,6 +56,7 @@ class ScreenCaptureService : Service() {
     private var virtualDisplay: VirtualDisplay? = null
     private var imageReader: ImageReader? = null
     private var handlerThread: HandlerThread? = null
+    private var lastFrameEncodedTimestamp: Long = 0L
 
     override fun onCreate() {
         super.onCreate()
@@ -126,6 +127,13 @@ class ScreenCaptureService : Service() {
 
         reader.setOnImageAvailableListener({ ir ->
             val image = ir.acquireLatestImage() ?: return@setOnImageAvailableListener
+            val now = System.currentTimeMillis()
+            if (now - lastFrameEncodedTimestamp < 80L) { // Limit to ~12 FPS for zero thermal/memory overhead
+                image.close()
+                return@setOnImageAvailableListener
+            }
+            lastFrameEncodedTimestamp = now
+
             try {
                 val planes = image.planes
                 val buffer = planes[0].buffer

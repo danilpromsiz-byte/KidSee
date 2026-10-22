@@ -236,4 +236,6 @@
     <string name="mic_permission_denied">В доступе к микрофону отказано</string>
     <string name="disable_battery_opt_btn">Отключить оптимизацию батареи</string>
     <string name="disable_battery_opt_desc">Предотвращает закрытие KidScreen системой в фоне</string>
+    <string name="lock_overlay_title">Время сделать перерыв!</string>
+    <string name="lock_overlay_desc">"Экран заблокирован родителем.\nПоговорите с мамой или папой, чтобы разблокировать."</string>
 </resources>

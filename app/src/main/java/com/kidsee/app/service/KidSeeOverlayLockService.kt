@@ -6,10 +6,12 @@ import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
 import android.os.IBinder
+import android.provider.Settings
 import android.view.Gravity
 import android.view.View
 import android.view.WindowManager
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -20,7 +22,9 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -33,6 +37,7 @@ import androidx.savedstate.SavedStateRegistry
 import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
+import com.kidsee.core.ui.R
 import com.kidsee.core.ui.components.KidSeeMascot
 import com.kidsee.core.ui.theme.KidSeeTypography
 import com.kidsee.core.ui.theme.WazeBlue
@@ -81,6 +86,11 @@ class KidSeeOverlayLockService : Service(), LifecycleOwner, SavedStateRegistryOw
     }
 
     private fun showOverlay() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            Timber.w("Cannot show lock overlay: ACTION_MANAGE_OVERLAY_PERMISSION not granted")
+            return
+        }
+
         val layoutType = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
         } else {
@@ -92,9 +102,9 @@ class KidSeeOverlayLockService : Service(), LifecycleOwner, SavedStateRegistryOw
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
             layoutType,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN or
+                    WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
             PixelFormat.TRANSLUCENT
         ).apply {
             gravity = Gravity.CENTER
@@ -108,6 +118,9 @@ class KidSeeOverlayLockService : Service(), LifecycleOwner, SavedStateRegistryOw
                     modifier = Modifier
                         .fillMaxSize()
                         .background(WazeWarmWhite)
+                        .pointerInput(Unit) {
+                            detectTapGestures { /* Intercept and consume all touches */ }
+                        }
                         .padding(32.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -119,7 +132,7 @@ class KidSeeOverlayLockService : Service(), LifecycleOwner, SavedStateRegistryOw
                     )
                     Spacer(modifier = Modifier.height(28.dp))
                     Text(
-                        text = "Time for a Break!",
+                        text = stringResource(R.string.lock_overlay_title),
                         style = KidSeeTypography.headlineLarge.copy(
                             fontWeight = FontWeight.Black,
                             fontSize = 30.sp
@@ -128,7 +141,7 @@ class KidSeeOverlayLockService : Service(), LifecycleOwner, SavedStateRegistryOw
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     Text(
-                        text = "Screen locked by your parent.\nTalk with Mom or Dad to unlock.",
+                        text = stringResource(R.string.lock_overlay_desc),
                         style = KidSeeTypography.bodyLarge.copy(
                             fontSize = 17.sp,
                             color = Color(0xFF67727E)

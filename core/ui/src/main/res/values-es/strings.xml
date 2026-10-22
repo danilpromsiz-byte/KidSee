@@ -236,4 +236,6 @@
     <string name="mic_permission_denied">Permiso de micrófono denegado</string>
     <string name="disable_battery_opt_btn">Desactivar optimización de batería</string>
     <string name="disable_battery_opt_desc">Evita que Android cierre KidScreen en segundo plano</string>
+    <string name="lock_overlay_title">¡Hora de un descanso!</string>
+    <string name="lock_overlay_desc">"Pantalla bloqueada por tus padres.\nHabla con mamá o papá para desbloquearla."</string>
 </resources>

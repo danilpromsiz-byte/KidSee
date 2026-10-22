@@ -379,8 +379,12 @@ class MainActivity : AppCompatActivity() {
             }
 
             if (isInPipMode) {
+                val familyDevices by familyDevicesFlow.collectAsState(initial = emptyList())
+                val activeDevice = selectedDevice?.let { sel ->
+                    familyDevices.find { it.id == sel.id } ?: sel
+                }
                 PipScreenView(
-                    device = selectedDevice,
+                    device = activeDevice,
                     lanDiscoveryManager = app.stateManager.lanDiscoveryManager
                 )
             } else if (roleState == null) {
@@ -438,7 +442,10 @@ class MainActivity : AppCompatActivity() {
                         onUnlock = { isParentUnlocked = true }
                     )
                 } else {
-                    val activeDevice = selectedDevice
+                    val familyDevices by familyDevicesFlow.collectAsState(initial = emptyList())
+                    val activeDevice = selectedDevice?.let { sel ->
+                        familyDevices.find { it.id == sel.id } ?: sel
+                    }
                     if (activeDevice != null) {
                         DeviceDetailScreen(
                             device = activeDevice,
@@ -453,6 +460,9 @@ class MainActivity : AppCompatActivity() {
                             },
                             onReconnect = {
                                 app.stateManager.lanDiscoveryManager.reconnectDevice(activeDevice.id)
+                                scope.launch {
+                                    app.stateManager.lanDiscoveryManager.rescan()
+                                }
                                 Toast.makeText(
                                     this@MainActivity,
                                     localizedContext.getString(R.string.reconnecting_device),

@@ -236,4 +236,6 @@
     <string name="mic_permission_denied">Autorisation du microphone refusée</string>
     <string name="disable_battery_opt_btn">Désactiver l\'optimisation de batterie</string>
     <string name="disable_battery_opt_desc">Empêche Android de fermer KidScreen en arrière-plan</string>
+    <string name="lock_overlay_title">"C'est l'heure d'une pause !"</string>
+    <string name="lock_overlay_desc">"Écran verrouillé par vos parents.\nParlez-en à maman ou papa pour déverrouiller."</string>
 </resources>

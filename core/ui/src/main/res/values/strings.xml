@@ -236,4 +236,6 @@
     <string name="mic_permission_denied">Microphone permission denied</string>
     <string name="disable_battery_opt_btn">Disable Battery Optimization</string>
     <string name="disable_battery_opt_desc">Prevents Android from killing KidScreen in background</string>
+    <string name="lock_overlay_title">Time for a Break!</string>
+    <string name="lock_overlay_desc">"Screen locked by your parent.\nTalk with Mom or Dad to unlock."</string>
 </resources>

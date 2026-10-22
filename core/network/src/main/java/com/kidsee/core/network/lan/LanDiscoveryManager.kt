@@ -212,14 +212,15 @@ class LanDiscoveryManager(
             while (isActive && isRunning) {
                 delay(6_000L)
                 val now = System.currentTimeMillis()
-                val removed = discoveredDevices.entries.removeIf { entry ->
+                var hasChanges = false
+                for (entry in discoveredDevices.entries) {
                     val isStale = (now - entry.value.lastSeenTimestamp) > 30_000L
-                    if (isStale) {
-                        deviceIpMap.remove(entry.key)
+                    if (isStale && entry.value.status != com.kidsee.core.domain.model.DeviceStatus.OFFLINE) {
+                        entry.setValue(entry.value.copy(status = com.kidsee.core.domain.model.DeviceStatus.OFFLINE))
+                        hasChanges = true
                     }
-                    isStale
                 }
-                if (removed) {
+                if (hasChanges) {
                     _discoveredDevicesFlow.value = discoveredDevices.values.toList()
                 }
             }
@@ -325,7 +326,7 @@ class LanDiscoveryManager(
         return sb.toString()
     }
 
-    private fun handleChildIncomingConnection(socket: Socket) {
+    private suspend fun handleChildIncomingConnection(socket: Socket) {
         try {
             socket.soTimeout = 3000
             val rawInput = BufferedInputStream(socket.getInputStream())
@@ -344,7 +345,34 @@ class LanDiscoveryManager(
             }
 
             when {
-                // HTTP GET /kidsee/screen (Live screen frame stream)
+                // HTTP GET /kidsee/stream (Persistent MJPEG screen video stream)
+                firstLine.startsWith("GET /kidsee/stream") -> {
+                    val boundary = "kidsee_frame_boundary"
+                    val header = "HTTP/1.1 200 OK\r\n" +
+                            "Content-Type: multipart/x-mixed-replace; boundary=$boundary\r\n" +
+                            "Cache-Control: no-cache, no-store, must-revalidate\r\n" +
+                            "Pragma: no-cache\r\n" +
+                            "Access-Control-Allow-Origin: *\r\n" +
+                            "Connection: close\r\n\r\n"
+                    output.write(header.toByteArray(Charsets.UTF_8))
+                    output.flush()
+
+                    while (kotlinx.coroutines.currentCoroutineContext().isActive && isRunning) {
+                        val frame = activeFrameProvider?.invoke()
+                        if (frame != null && frame.isNotEmpty()) {
+                            val partHeader = "--$boundary\r\n" +
+                                    "Content-Type: image/jpeg\r\n" +
+                                    "Content-Length: ${frame.size}\r\n\r\n"
+                            output.write(partHeader.toByteArray(Charsets.UTF_8))
+                            output.write(frame)
+                            output.write("\r\n".toByteArray(Charsets.UTF_8))
+                            output.flush()
+                        }
+                        delay(100L) // ~10 fps smooth LAN streaming with zero socket reconnection
+                    }
+                }
+
+                // HTTP GET /kidsee/screen (Live screen frame single snapshot)
                 firstLine.startsWith("GET /kidsee/screen") -> {
                     val frame = activeFrameProvider?.invoke()
                     if (frame != null && frame.isNotEmpty()) {
@@ -713,6 +741,63 @@ class LanDiscoveryManager(
             null
         } catch (_: Exception) {
             null
+        }
+    }
+
+    /**
+     * Connects a single persistent TCP socket to stream real-time screen frames from the child device.
+     * Prevents socket flooding and TIME_WAIT socket exhaustion.
+     */
+    fun streamScreenFrames(deviceId: String): kotlinx.coroutines.flow.Flow<ByteArray> = kotlinx.coroutines.flow.flow {
+        val ip = deviceIpMap[deviceId] ?: return@flow
+        var socket: Socket? = null
+        try {
+            socket = Socket().apply {
+                tcpNoDelay = true
+                soTimeout = 4000
+                connect(InetSocketAddress(ip, DISCOVERY_PORT), 1500)
+            }
+            val out = OutputStreamWriter(socket.getOutputStream(), Charsets.UTF_8)
+            out.write("GET /kidsee/stream HTTP/1.1\r\nHost: $ip\r\nConnection: close\r\n\r\n")
+            out.flush()
+
+            val rawStream = BufferedInputStream(socket.getInputStream())
+            // Read until initial response headers end
+            while (true) {
+                val line = readAsciiLine(rawStream) ?: break
+                if (line.isEmpty()) break
+            }
+
+            while (kotlinx.coroutines.currentCoroutineContext().isActive && isRunning) {
+                var contentLength = 0
+                // Read multipart part headers
+                while (true) {
+                    val line = readAsciiLine(rawStream) ?: break
+                    if (line.isEmpty()) break
+                    if (line.startsWith("Content-Length:", ignoreCase = true)) {
+                        contentLength = line.substringAfter(":").trim().toIntOrNull() ?: 0
+                    }
+                }
+
+                if (contentLength > 0) {
+                    val frameBuffer = ByteArray(contentLength)
+                    var readTotal = 0
+                    while (readTotal < contentLength) {
+                        val r = rawStream.read(frameBuffer, readTotal, contentLength - readTotal)
+                        if (r == -1) break
+                        readTotal += r
+                    }
+                    if (readTotal == contentLength) {
+                        emit(frameBuffer)
+                    }
+                } else {
+                    break
+                }
+            }
+        } catch (e: Exception) {
+            Timber.v("Screen stream closed: ${e.message}")
+        } finally {
+            try { socket?.close() } catch (_: Exception) {}
         }
     }
 

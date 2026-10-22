@@ -186,7 +186,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        appUpdateManager.checkPendingInstall()
     }
 
     override fun onDestroy() {
@@ -237,17 +236,16 @@ class MainActivity : AppCompatActivity() {
                 appUpdateManager.checkForUpdates(isManual = false)
             }
 
-            if (showUpdateDialog || updateState is UpdateState.UpdateAvailable || updateState is UpdateState.Downloading) {
+            if (showUpdateDialog || updateState is UpdateState.UpdateAvailable) {
                 UpdateDialog(
                     updateState = updateState,
                     onDismiss = {
                         showUpdateDialog = false
                         appUpdateManager.resetUpdateState()
                     },
-                    onUpdateClick = { releaseInfo ->
-                        scope.launch {
-                            appUpdateManager.downloadAndInstall(releaseInfo)
-                        }
+                    onUpdateClick = { _ ->
+                        showUpdateDialog = false
+                        appUpdateManager.openGooglePlay()
                     }
                 )
             }

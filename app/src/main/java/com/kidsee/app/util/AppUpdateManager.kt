@@ -3,10 +3,7 @@ package com.kidsee.app.util
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
-import android.provider.Settings
 import android.widget.Toast
-import androidx.core.content.FileProvider
 import com.kidsee.core.network.updater.GitHubUpdateClient
 import com.kidsee.core.network.updater.ReleaseInfo
 import com.kidsee.core.ui.R
@@ -16,15 +13,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.io.File
 
 sealed class UpdateState {
     object Idle : UpdateState()
     object Checking : UpdateState()
     data class UpdateAvailable(val releaseInfo: ReleaseInfo) : UpdateState()
     object UpToDate : UpdateState()
-    data class Downloading(val progressPercent: Int) : UpdateState()
-    data class ReadyToInstall(val apkFile: File) : UpdateState()
     data class Error(val message: String) : UpdateState()
 }
 
@@ -35,20 +29,8 @@ class AppUpdateManager(
     private val _updateState = MutableStateFlow<UpdateState>(UpdateState.Idle)
     val updateState: StateFlow<UpdateState> = _updateState.asStateFlow()
 
-    private var pendingInstallApk: File? = null
-
     fun resetUpdateState() {
         _updateState.value = UpdateState.Idle
-    }
-
-    fun checkPendingInstall() {
-        val apk = pendingInstallApk
-        if (apk != null && apk.exists()) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O || context.packageManager.canRequestPackageInstalls()) {
-                pendingInstallApk = null
-                installApk(apk)
-            }
-        }
     }
 
     fun getCurrentVersionName(): String {
@@ -96,30 +78,6 @@ class AppUpdateManager(
                 }
             }
         }
-    }
-
-    suspend fun downloadAndInstall(releaseInfo: ReleaseInfo) {
-        val targetFile = File(context.cacheDir, "KidSee-update.apk")
-        _updateState.value = UpdateState.Downloading(0)
-
-        val success = updateClient.downloadApk(
-            downloadUrl = releaseInfo.apkDownloadUrl,
-            targetFile = targetFile,
-            onProgress = { pct ->
-                _updateState.value = UpdateState.Downloading(pct)
-            }
-        )
-
-        if (success && targetFile.exists()) {
-            _updateState.value = UpdateState.ReadyToInstall(targetFile)
-            installApk(targetFile)
-        } else {
-            _updateState.value = UpdateState.Error("APK download failed. Check network connection.")
-        }
-    }
-
-    fun installApk(apkFile: File) {
-        openGooglePlay()
     }
 
     fun openGooglePlay() {

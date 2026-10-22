@@ -56,7 +56,7 @@ fun UpdateDialog(
         else -> null
     }
 
-    if (releaseInfo == null && updateState !is UpdateState.Downloading) return
+    if (releaseInfo == null) return
 
     BasicAlertDialog(
         onDismissRequest = onDismiss
@@ -114,28 +114,6 @@ fun UpdateDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 when (updateState) {
-                    is UpdateState.Downloading -> {
-                        Column(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            LinearProgressIndicator(
-                                progress = { updateState.progressPercent / 100f },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(8.dp)
-                                    .clip(RoundedCornerShape(4.dp)),
-                                color = WazeBlue,
-                                trackColor = Color(0xFFE2E8F0)
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = stringResource(R.string.downloading_progress, updateState.progressPercent),
-                                style = KidSeeTypography.bodySmall.copy(color = WazeTextSecondary)
-                            )
-                        }
-                    }
-
                     is UpdateState.UpdateAvailable -> {
                         val updateFocusRequester = remember { FocusRequester() }
                         LaunchedEffect(Unit) {

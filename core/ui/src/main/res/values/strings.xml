@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- App Name -->
-    <string name="app_name">KidSee</string>
+    <string name="app_name">KidScreen</string>
     <string name="tagline">Smart &amp; Caring Screen Supervision</string>
 
     <!-- Language Selection -->
@@ -31,7 +31,7 @@
 
     <!-- Child Setup Wizard (Permissions) -->
     <string name="setup_title">Permission Setup</string>
-    <string name="setup_subtitle">KidSee requires these permissions to protect and monitor your child</string>
+    <string name="setup_subtitle">KidScreen requires these permissions to protect and monitor your child</string>
     <string name="perm_accessibility">Accessibility Service</string>
     <string name="perm_accessibility_desc">Detects active apps and video playback</string>
     <string name="perm_notification">Notification Listener</string>
@@ -49,7 +49,7 @@
     <string name="btn_finish_setup">Finish Setup</string>
 
     <!-- Parent Dashboard -->
-    <string name="dashboard_title">KidSee Dashboard</string>
+    <string name="dashboard_title">KidScreen Dashboard</string>
     <string name="dashboard_subtitle">Supervised Devices</string>
     <string name="no_devices_title">No devices paired yet</string>
     <string name="no_devices_desc">Add your child\'s phone, tablet, or TV to start viewing and guiding</string>
@@ -82,7 +82,7 @@
     <string name="volume_label">Volume: %1$d%%</string>
 
     <!-- Child Active / Locked Screen -->
-    <string name="child_active_title">KidSee is Active</string>
+    <string name="child_active_title">KidScreen is Active</string>
     <string name="child_active_desc">This device is protected by your family rules</string>
     <string name="locked_title">Time for a Break!</string>
     <string name="locked_subtitle">Screen locked by your parent</string>
@@ -145,7 +145,7 @@
     <string name="add_device_subtitle">Pairing child device</string>
     <string name="add_device_family_desc">Set your own family code. Use the same code on your child\'s device:</string>
     <string name="code_copied_toast">Family code copied!</string>
-    <string name="add_device_step1">1. Install KidSee on your child\'s phone, tablet, or TV</string>
+    <string name="add_device_step1">1. Install KidScreen on your child\'s phone, tablet, or TV</string>
     <string name="add_device_step2">2. Open the app and select Child mode</string>
     <string name="add_device_step3">3. Connect both devices to the same Wi-Fi network (or set matching Family Code)</string>
     <string name="add_device_by_ip">Or connect directly by IP address:</string>
@@ -160,7 +160,7 @@
     <string name="link_to_family">+ Link to Family</string>
     <string name="found_on_wifi">📡 Found on Wi-Fi</string>
     <string name="child_ready_connect">📡 Ready to Connect</string>
-    <string name="child_waiting_parent">Open KidSee on parent\'s device on this Wi-Fi network to connect</string>
+    <string name="child_waiting_parent">Open KidScreen on parent\'s device on this Wi-Fi network to connect</string>
     <string name="active_protections">Active Protections</string>
     <string name="prot_screen_mon">Safe Screen Monitoring</string>
     <string name="prot_schedules">Bedtime &amp; Study Schedules</string>
@@ -229,11 +229,11 @@
     <string name="section_online_devices">Active Devices Online</string>
     <string name="section_history_devices">Saved &amp; Previously Connected</string>
     <string name="btn_reconnect_wifi">Reconnect Network</string>
-    <string name="child_persistent_service_channel">KidSee Protection Service</string>
+    <string name="child_persistent_service_channel">KidScreen Protection Service</string>
     <string name="child_persistent_service_desc">Keeps child monitoring alive 24/7</string>
     <string name="child_persistent_notification_text">Protected by family rules — Connected</string>
     <string name="mic_permission_granted">Microphone permission granted</string>
     <string name="mic_permission_denied">Microphone permission denied</string>
     <string name="disable_battery_opt_btn">Disable Battery Optimization</string>
-    <string name="disable_battery_opt_desc">Prevents Android from killing KidSee in background</string>
+    <string name="disable_battery_opt_desc">Prevents Android from killing KidScreen in background</string>
 </resources>

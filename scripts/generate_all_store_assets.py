@@ -1,7 +1,7 @@
 import os
 from PIL import Image, ImageDraw, ImageFont
 
-BASE_DIR = r"C:\WORK\KidSee\google_play_assets"
+BASE_DIR = r"C:\WORK\KidScreen\google_play_assets"
 EN_DIR = os.path.join(BASE_DIR, "en")
 RU_DIR = os.path.join(BASE_DIR, "ru")
 os.makedirs(EN_DIR, exist_ok=True)
@@ -82,7 +82,7 @@ def generate_feature_graphic(icon_img, lang="en", out_path=""):
     draw.rounded_rectangle([70, 75, 70 + tag_w, 115], radius=16, fill=(37, 99, 235))
     draw.text((70 + tag_w // 2, 95), tag_text, fill=(255, 255, 255), font=font_tag, anchor="mm")
     
-    draw.text((70, 140), "KidSee", fill=(15, 23, 42), font=font_large)
+    draw.text((70, 140), "KidScreen", fill=(15, 23, 42), font=font_large)
     
     y = 235
     for i, b in enumerate(bullets):
@@ -146,7 +146,7 @@ def generate_screenshots(lang="en", target_dir=""):
     
     if lang == "en":
         t_tag, t_main, t_sub = "LIVE MONITORING", "Real-Time Screen View", "Watch child device live with ultra-low latency"
-        app_bar, live_bdg = "KidSee Parent", "LIVE: 60 FPS"
+        app_bar, live_bdg = "KidScreen Parent", "LIVE: 60 FPS"
         scr_t, scr_sub = "Child Device Screen", "Active App: Educational Quiz"
         stat_t = "Resolution: 1080p | Latency: 42ms | Wi-Fi Local P2P"
         btn1_t, btn1_s = "Talk (Mic)", "Intercom"
@@ -155,7 +155,7 @@ def generate_screenshots(lang="en", target_dir=""):
         tag_w = 320
     else:
         t_tag, t_main, t_sub = "ПРЯМАЯ ТРАНСЛЯЦИЯ", "Просмотр экрана онлайн", "Наблюдайте за экраном ребёнка в 60 FPS"
-        app_bar, live_bdg = "KidSee Родитель", "ОНЛАЙН: 60 FPS"
+        app_bar, live_bdg = "KidScreen Родитель", "ОНЛАЙН: 60 FPS"
         scr_t, scr_sub = "Экран устройства ребёнка", "Активно: Обучающие уроки"
         stat_t = "Разрешение: 1080p | Задержка: 42мс | Wi-Fi P2P"
         btn1_t, btn1_s = "Рация", "Голос"
@@ -230,7 +230,7 @@ def generate_screenshots(lang="en", target_dir=""):
         cdraw = ImageDraw.Draw(cv)
         cdraw.text((sx + 40, sy + 25), "09:41", font=font_clock, fill=(203, 213, 225))
         cdraw.rectangle([sx, sy + 70, sx + sw, sy + 150], fill=(25, 20, 45))
-        cdraw.text((sx + 30, sy + 110), "KidSee Media" if lang == "en" else "KidSee Медиа", font=font_card_t, fill=(255, 255, 255), anchor="lm")
+        cdraw.text((sx + 30, sy + 110), "KidScreen Media" if lang == "en" else "KidScreen Медиа", font=font_card_t, fill=(255, 255, 255), anchor="lm")
         
         card_y = sy + 200
         cdraw.rounded_rectangle([sx + 30, card_y, sx + sw - 30, card_y + 400], radius=24, fill=(45, 30, 75), outline=(168, 85, 247), width=2)
@@ -284,7 +284,7 @@ def generate_screenshots(lang="en", target_dir=""):
         cdraw = ImageDraw.Draw(cv)
         cdraw.text((sx + 40, sy + 25), "09:41", font=font_clock, fill=(203, 213, 225))
         cdraw.rectangle([sx, sy + 70, sx + sw, sy + 150], fill=(45, 15, 20))
-        cdraw.text((sx + 30, sy + 110), "KidSee Lock" if lang == "en" else "KidSee Защита", font=font_card_t, fill=(255, 255, 255), anchor="lm")
+        cdraw.text((sx + 30, sy + 110), "KidScreen Lock" if lang == "en" else "KidScreen Защита", font=font_card_t, fill=(255, 255, 255), anchor="lm")
         
         shield_cx = sx + sw // 2
         shield_cy = sy + 380
@@ -339,7 +339,7 @@ def generate_screenshots(lang="en", target_dir=""):
         cdraw = ImageDraw.Draw(cv)
         cdraw.text((sx + 40, sy + 25), "09:41", font=font_clock, fill=(203, 213, 225))
         cdraw.rectangle([sx, sy + 70, sx + sw, sy + 150], fill=(15, 35, 40))
-        cdraw.text((sx + 30, sy + 110), "KidSee Privacy" if lang == "en" else "KidSee Приватность", font=font_card_t, fill=(255, 255, 255), anchor="lm")
+        cdraw.text((sx + 30, sy + 110), "KidScreen Privacy" if lang == "en" else "KidScreen Приватность", font=font_card_t, fill=(255, 255, 255), anchor="lm")
         
         y_cursor = sy + 200
         for title, desc in items:

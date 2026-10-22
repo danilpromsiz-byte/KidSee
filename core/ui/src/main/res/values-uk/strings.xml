@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- App Name -->
-    <string name="app_name">KidSee</string>
+    <string name="app_name">KidScreen</string>
     <string name="tagline">Розумний та турботливий батьківський контроль</string>
 
     <!-- Language Selection -->
@@ -31,7 +31,7 @@
 
     <!-- Child Setup Wizard (Permissions) -->
     <string name="setup_title">Налаштування дозволів</string>
-    <string name="setup_subtitle">KidSee потребує цих дозволів для захисту та нагляду за дитиною</string>
+    <string name="setup_subtitle">KidScreen потребує цих дозволів для захисту та нагляду за дитиною</string>
     <string name="perm_accessibility">Спеціальні можливості</string>
     <string name="perm_accessibility_desc">Визначення активних додатків та відтворення відео</string>
     <string name="perm_notification">Доступ до сповіщень</string>
@@ -49,7 +49,7 @@
     <string name="btn_finish_setup">Завершити налаштування</string>
 
     <!-- Parent Dashboard -->
-    <string name="dashboard_title">Панель KidSee</string>
+    <string name="dashboard_title">Панель KidScreen</string>
     <string name="dashboard_subtitle">Пристрої дітей</string>
     <string name="no_devices_title">Пристроїв ще не підключено</string>
     <string name="no_devices_desc">Додайте телефон, планшет чи ТВ вашої дитини для перегляду та керування</string>
@@ -82,7 +82,7 @@
     <string name="volume_label">Гучність: %1$d%%</string>
 
     <!-- Child Active / Locked Screen -->
-    <string name="child_active_title">KidSee активний</string>
+    <string name="child_active_title">KidScreen активний</string>
     <string name="child_active_desc">Пристрій захищено сімейними правилами</string>
     <string name="locked_title">Час зробити перерву!</string>
     <string name="locked_subtitle">Екран заблоковано батьками</string>
@@ -145,7 +145,7 @@
     <string name="add_device_subtitle">Новий пристрій</string>
     <string name="add_device_family_desc">Вкажіть власний код сім\'ї. Цей самий код має бути зазначений на пристроях дітей:</string>
     <string name="code_copied_toast">Код сім\'ї скопійовано!</string>
-    <string name="add_device_step1">1. Встановіть KidSee на телефон, планшет або ТВ дитини</string>
+    <string name="add_device_step1">1. Встановіть KidScreen на телефон, планшет або ТВ дитини</string>
     <string name="add_device_step2">2. Відкрийте додаток та оберіть «Дитина»</string>
     <string name="add_device_step3">3. Підключіть обидва пристрої до однієї мережі Wi-Fi (або вкажіть однаковий Код сім\'ї)</string>
     <string name="add_device_by_ip">Або підключити напряму за IP-адресою:</string>
@@ -160,7 +160,7 @@
     <string name="link_to_family">+ Прив\'язати до сім\'ї</string>
     <string name="found_on_wifi">📡 Знайдено у Wi-Fi</string>
     <string name="child_ready_connect">📡 Готовий до підключення</string>
-    <string name="child_waiting_parent">Відкрийте KidSee на телефоні батьків у цій же мережі Wi-Fi для підключення</string>
+    <string name="child_waiting_parent">Відкрийте KidScreen на телефоні батьків у цій же мережі Wi-Fi для підключення</string>
     <string name="active_protections">Активний захист</string>
     <string name="prot_screen_mon">Безпечний моніторинг екрана</string>
     <string name="prot_schedules">Розклад сну та навчання</string>
@@ -229,11 +229,11 @@
     <string name="section_online_devices">Пристрої в мережі</string>
     <string name="section_history_devices">Раніше підключені пристрої</string>
     <string name="btn_reconnect_wifi">Перепідключити мережу</string>
-    <string name="child_persistent_service_channel">Служба захисту KidSee</string>
+    <string name="child_persistent_service_channel">Служба захисту KidScreen</string>
     <string name="child_persistent_service_desc">Підтримує зв\'язок з батьками 24/7</string>
     <string name="child_persistent_notification_text">Пристрій під захистом — У мережі</string>
     <string name="mic_permission_granted">Доступ до мікрофона надано</string>
     <string name="mic_permission_denied">У доступі до мікрофона відмовлено</string>
     <string name="disable_battery_opt_btn">Вимкнути оптимізацію батареї</string>
-    <string name="disable_battery_opt_desc">Запобігає закриттю KidSee системою у фоні</string>
+    <string name="disable_battery_opt_desc">Запобігає закриттю KidScreen системою у фоні</string>
 </resources>

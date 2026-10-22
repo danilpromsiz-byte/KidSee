@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- App Name -->
-    <string name="app_name">KidSee</string>
+    <string name="app_name">KidScreen</string>
     <string name="tagline">Supervision d\'écran intelligente et bienveillante</string>
 
     <!-- Language Selection -->
@@ -31,7 +31,7 @@
 
     <!-- Child Setup Wizard (Permissions) -->
     <string name="setup_title">Configuration des autorisations</string>
-    <string name="setup_subtitle">KidSee a besoin de ces autorisations pour protéger et surveiller votre enfant</string>
+    <string name="setup_subtitle">KidScreen a besoin de ces autorisations pour protéger et surveiller votre enfant</string>
     <string name="perm_accessibility">Service d\'accessibilité</string>
     <string name="perm_accessibility_desc">Détecte les applications actives et la lecture vidéo</string>
     <string name="perm_notification">Accès aux notifications</string>
@@ -49,7 +49,7 @@
     <string name="btn_finish_setup">Terminer la configuration</string>
 
     <!-- Parent Dashboard -->
-    <string name="dashboard_title">Tableau de bord KidSee</string>
+    <string name="dashboard_title">Tableau de bord KidScreen</string>
     <string name="dashboard_subtitle">Appareils supervisés</string>
     <string name="no_devices_title">Aucun appareil associé</string>
     <string name="no_devices_desc">Ajoutez le téléphone, la tablette ou la TV de votre enfant pour commencer la supervision</string>
@@ -82,7 +82,7 @@
     <string name="volume_label">Volume : %1$d%%</string>
 
     <!-- Child Active / Locked Screen -->
-    <string name="child_active_title">KidSee est actif</string>
+    <string name="child_active_title">KidScreen est actif</string>
     <string name="child_active_desc">Cet appareil est protégé par les règles familiales</string>
     <string name="locked_title">C\'est l\'heure d\'une pause !</string>
     <string name="locked_subtitle">Écran verrouillé par votre parent</string>
@@ -145,7 +145,7 @@
     <string name="add_device_subtitle">Association de l\'appareil de l\'enfant</string>
     <string name="add_device_family_desc">Définissez votre code de famille. Utilisez le même sur l\'appareil de l\'enfant :</string>
     <string name="code_copied_toast">Code de famille copié !</string>
-    <string name="add_device_step1">1. Installez KidSee sur le téléphone, la tablette ou la TV de l\'enfant</string>
+    <string name="add_device_step1">1. Installez KidScreen sur le téléphone, la tablette ou la TV de l\'enfant</string>
     <string name="add_device_step2">2. Ouvrez l\'application et sélectionnez le mode Enfant</string>
     <string name="add_device_step3">3. Connectez les deux appareils au même réseau Wi-Fi (ou saisissez le même code de famille)</string>
     <string name="add_device_by_ip">Ou connectez directement par adresse IP :</string>
@@ -160,7 +160,7 @@
     <string name="link_to_family">+ Lier à la famille</string>
     <string name="found_on_wifi">📡 Découvert sur le Wi-Fi</string>
     <string name="child_ready_connect">📡 Prêt à être connecté</string>
-    <string name="child_waiting_parent">Ouvrez KidSee sur l\'appareil du parent sur ce réseau Wi-Fi pour vous connecter</string>
+    <string name="child_waiting_parent">Ouvrez KidScreen sur l\'appareil du parent sur ce réseau Wi-Fi pour vous connecter</string>
     <string name="active_protections">Protections actives</string>
     <string name="prot_screen_mon">Surveillance sécurisée de l\'écran</string>
     <string name="prot_schedules">Horaires de sommeil et d\'école</string>
@@ -229,11 +229,11 @@
     <string name="section_online_devices">Appareils en ligne</string>
     <string name="section_history_devices">Appareils enregistrés</string>
     <string name="btn_reconnect_wifi">Reconnecter le réseau</string>
-    <string name="child_persistent_service_channel">Service de protection KidSee</string>
+    <string name="child_persistent_service_channel">Service de protection KidScreen</string>
     <string name="child_persistent_service_desc">Maintient la surveillance active 24/7</string>
     <string name="child_persistent_notification_text">Protégé par les règles familiales — Connecté</string>
     <string name="mic_permission_granted">Autorisation du microphone accordée</string>
     <string name="mic_permission_denied">Autorisation du microphone refusée</string>
     <string name="disable_battery_opt_btn">Désactiver l\'optimisation de batterie</string>
-    <string name="disable_battery_opt_desc">Empêche Android de fermer KidSee en arrière-plan</string>
+    <string name="disable_battery_opt_desc">Empêche Android de fermer KidScreen en arrière-plan</string>
 </resources>

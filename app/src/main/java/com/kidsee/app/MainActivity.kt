@@ -483,6 +483,19 @@ class MainActivity : AppCompatActivity() {
                             onVolumeChanged = { vol ->
                                 sendCommand(activeDevice.id, CommandType.VOLUME_SET, vol.toString())
                             },
+                            onRenameDevice = { newName ->
+                                val updated = activeDevice.copy(name = newName)
+                                selectedDevice = updated
+                                scope.launch {
+                                    app.stateManager.repository.saveOrUpdateDevice(updated)
+                                    sendCommand(activeDevice.id, CommandType.RENAME_DEVICE, newName)
+                                }
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    localizedContext.getString(R.string.rename_device_toast),
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            },
                             onPushToTalkStart = {
                                 if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
                                     recordAudioLauncher.launch(Manifest.permission.RECORD_AUDIO)

@@ -28,6 +28,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeDown
 import androidx.compose.material.icons.automirrored.filled.VolumeMute
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.Lock
@@ -39,12 +41,15 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -102,9 +107,11 @@ fun DeviceDetailScreen(
     onMediaNext: () -> Unit,
     onMediaPrev: () -> Unit,
     onVolumeChanged: (Int) -> Unit,
+    onRenameDevice: (String) -> Unit = {},
     onPushToTalkStart: () -> Unit,
     onPushToTalkStop: () -> Unit
 ) {
+    var showRenameDialog by remember { mutableStateOf(false) }
     var lastNonZeroVolume by remember { mutableStateOf(if (device.currentVolume > 0) device.currentVolume else 50) }
     if (device.currentVolume > 0) {
         lastNonZeroVolume = device.currentVolume
@@ -236,11 +243,26 @@ fun DeviceDetailScreen(
             Spacer(modifier = Modifier.width(6.dp))
 
             Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = device.name.ifEmpty { stringResource(R.string.device_detail_default_name) },
-                    style = KidSeeTypography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    maxLines = 1
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = device.name.ifEmpty { stringResource(R.string.device_detail_default_name) },
+                        style = KidSeeTypography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    IconButton(
+                        onClick = { showRenameDialog = true },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = stringResource(R.string.rename_device_title),
+                            tint = WazeBlue,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
                 Text(
                     text = device.currentAppLabel ?: stringResource(R.string.app_idle),
                     style = KidSeeTypography.bodySmall.copy(color = WazeTextSecondary),
@@ -701,5 +723,51 @@ fun DeviceDetailScreen(
         }
 
         Spacer(modifier = Modifier.height(20.dp))
+    }
+
+    if (showRenameDialog) {
+        var newName by remember { mutableStateOf(device.name) }
+        AlertDialog(
+            onDismissRequest = { showRenameDialog = false },
+            title = {
+                Text(
+                    text = stringResource(R.string.rename_device_title),
+                    style = KidSeeTypography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                )
+            },
+            text = {
+                OutlinedTextField(
+                    value = newName,
+                    onValueChange = { newName = it },
+                    label = { Text(stringResource(R.string.rename_device_hint)) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val trimmed = newName.trim()
+                        if (trimmed.isNotBlank()) {
+                            onRenameDevice(trimmed)
+                        }
+                        showRenameDialog = false
+                    }
+                ) {
+                    Text(
+                        text = stringResource(R.string.btn_save),
+                        style = KidSeeTypography.labelMedium.copy(fontWeight = FontWeight.Bold, color = WazeBlue)
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRenameDialog = false }) {
+                    Text(
+                        text = stringResource(R.string.btn_cancel),
+                        style = KidSeeTypography.labelMedium.copy(color = WazeTextSecondary)
+                    )
+                }
+            }
+        )
     }
 }

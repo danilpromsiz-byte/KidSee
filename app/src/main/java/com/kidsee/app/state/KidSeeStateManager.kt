@@ -6,7 +6,11 @@ import android.content.IntentFilter
 import android.media.AudioManager
 import android.os.BatteryManager
 import android.os.Build
+import android.view.KeyEvent
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.runBlocking
 import com.kidsee.app.service.KidSeeAccessibilityService
+import com.kidsee.app.service.KidSeeChildService
 import com.kidsee.app.service.KidSeeDeviceAdmin
 import com.kidsee.app.service.KidSeeMediaMonitorService
 import com.kidsee.app.service.KidSeeOverlayLockService
@@ -76,6 +80,7 @@ class KidSeeStateManager(
             val role = repository.userRoleFlow.firstOrNull()
             if (role == UserRole.CHILD) {
                 startChildServices()
+                KidSeeChildService.start(context)
             }
         }
     }
@@ -89,10 +94,13 @@ class KidSeeStateManager(
             android.provider.Settings.Secure.ANDROID_ID
         ) ?: ("dev_" + Build.MODEL.hashCode().toString())
 
+        val savedName = runBlocking { repository.deviceNameFlow.firstOrNull() }
+        val initialName = if (!savedName.isNullOrBlank()) savedName else Build.MODEL
+
         val syncInitial = ChildDevice(
             id = syncDeviceId,
             familyId = "KID-7777",
-            name = Build.MODEL,
+            name = initialName,
             deviceType = detectDeviceType(),
             status = DeviceStatus.ONLINE,
             batteryPercent = getBatteryInfo().first,
@@ -156,11 +164,23 @@ class KidSeeStateManager(
 
             while (isActive) {
                 val familyId = repository.familyIdFlow.first()
+                val savedName = repository.deviceNameFlow.firstOrNull()
+                val displayName = if (!savedName.isNullOrBlank()) savedName else Build.MODEL
+
                 val batteryInfo = getBatteryInfo()
                 val mediaService = KidSeeMediaMonitorService.instance
+
+                val isMuted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    try { audioManager.isStreamMute(AudioManager.STREAM_MUSIC) } catch (_: Exception) { false }
+                } else {
+                    try { audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) == 0 } catch (_: Exception) { false }
+                }
+
                 val currentVol = try { audioManager.getStreamVolume(AudioManager.STREAM_MUSIC) } catch (_: Exception) { -1 }
                 val maxVol = try { audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC) } catch (_: Exception) { 15 }
-                val volume = if (currentVol >= 0 && maxVol > 0) {
+                val volume = if (isMuted) {
+                    0
+                } else if (currentVol >= 0 && maxVol > 0) {
                     ((currentVol * 100) / maxVol).coerceIn(0, 100)
                 } else {
                     mediaService?.getCurrentVolumePercent() ?: 50
@@ -170,7 +190,7 @@ class KidSeeStateManager(
                 val device = ChildDevice(
                     id = deviceId,
                     familyId = familyId,
-                    name = Build.MODEL,
+                    name = displayName,
                     deviceType = deviceType,
                     status = if (isScreenLocked) DeviceStatus.LOCKED else DeviceStatus.ONLINE,
                     currentPackage = currentPackage,
@@ -298,6 +318,25 @@ class KidSeeStateManager(
             CommandType.MEDIA_PAUSE -> mediaService?.pauseMedia()
             CommandType.MEDIA_NEXT -> mediaService?.skipNext()
             CommandType.MEDIA_PREV -> mediaService?.skipPrevious()
+            CommandType.RENAME_DEVICE -> {
+                val newName = command.payload?.trim() ?: ""
+                if (newName.isNotBlank()) {
+                    scope.launch {
+                        repository.saveDeviceName(newName)
+                        val current = _currentDeviceState.value
+                        if (current != null) {
+                            val updated = current.copy(
+                                name = newName,
+                                lastSeenTimestamp = System.currentTimeMillis()
+                            )
+                            _currentDeviceState.value = updated
+                            repository.updateDeviceStatus(updated)
+                            lanDiscoveryManager.broadcastDevice(updated)
+                        }
+                        Timber.d("Child renamed to: $newName")
+                    }
+                }
+            }
             CommandType.VOLUME_SET -> {
                 val level = (command.payload?.toIntOrNull() ?: 50).coerceIn(0, 100)
                 scope.launch(Dispatchers.Main) {
@@ -305,29 +344,53 @@ class KidSeeStateManager(
                         val max = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
                         val target = ((level * max) / 100).coerceIn(0, max)
 
-                        if (target > 0) {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                try {
-                                    audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0)
-                                } catch (_: Exception) {}
-                            }
-                            audioManager.setStreamVolume(
-                                AudioManager.STREAM_MUSIC,
-                                target,
-                                AudioManager.FLAG_SHOW_UI or AudioManager.FLAG_PLAY_SOUND
-                            )
-                        } else {
+                        if (level == 0) {
                             // Target is 0 -> Complete mute
-                            audioManager.setStreamVolume(
-                                AudioManager.STREAM_MUSIC,
-                                0,
-                                AudioManager.FLAG_SHOW_UI
-                            )
+                            // 1. Mute stream via adjustStreamVolume
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                                 try {
                                     audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_MUTE, AudioManager.FLAG_SHOW_UI)
                                 } catch (_: Exception) {}
                             }
+                            // 2. Set stream volume to 0
+                            try {
+                                audioManager.setStreamVolume(
+                                    AudioManager.STREAM_MUSIC,
+                                    0,
+                                    AudioManager.FLAG_SHOW_UI
+                                )
+                            } catch (_: Exception) {}
+                            // 3. Fallback for Android TV / fixed volume: dispatch KEYCODE_VOLUME_MUTE if not already muted
+                            try {
+                                val isMuted = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) audioManager.isStreamMute(AudioManager.STREAM_MUSIC) else false
+                                if (!isMuted) {
+                                    audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_VOLUME_MUTE))
+                                    audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_VOLUME_MUTE))
+                                }
+                            } catch (_: Exception) {}
+                        } else {
+                            // Target > 0 -> Unmute and set volume
+                            // 1. Unmute stream
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                                try {
+                                    audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0)
+                                } catch (_: Exception) {}
+                            }
+                            // 2. Set stream volume
+                            try {
+                                audioManager.setStreamVolume(
+                                    AudioManager.STREAM_MUSIC,
+                                    target.coerceAtLeast(1),
+                                    AudioManager.FLAG_SHOW_UI or AudioManager.FLAG_PLAY_SOUND
+                                )
+                            } catch (_: Exception) {}
+                            // 3. If stream is still muted on TV, dispatch KEYCODE_VOLUME_MUTE to unmute
+                            try {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && audioManager.isStreamMute(AudioManager.STREAM_MUSIC)) {
+                                    audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_VOLUME_MUTE))
+                                    audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_VOLUME_MUTE))
+                                }
+                            } catch (_: Exception) {}
                         }
                         Timber.d("Volume set cleanly to target=$target (max=$max, level=$level%)")
                     } catch (e: Exception) {
@@ -358,9 +421,11 @@ class KidSeeStateManager(
                 scope.launch(Dispatchers.Main) {
                     try {
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                            audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0)
+                            try { audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_UNMUTE, 0) } catch (_: Exception) {}
                         }
                         audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_RAISE, AudioManager.FLAG_SHOW_UI or AudioManager.FLAG_PLAY_SOUND)
+                        audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_VOLUME_UP))
+                        audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_VOLUME_UP))
                     } catch (_: Exception) {}
                     mediaService?.changeVolumeBy(1)
                 }
@@ -369,6 +434,8 @@ class KidSeeStateManager(
                 scope.launch(Dispatchers.Main) {
                     try {
                         audioManager.adjustStreamVolume(AudioManager.STREAM_MUSIC, AudioManager.ADJUST_LOWER, AudioManager.FLAG_SHOW_UI or AudioManager.FLAG_PLAY_SOUND)
+                        audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_VOLUME_DOWN))
+                        audioManager.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_VOLUME_DOWN))
                     } catch (_: Exception) {}
                     mediaService?.changeVolumeBy(-1)
                 }

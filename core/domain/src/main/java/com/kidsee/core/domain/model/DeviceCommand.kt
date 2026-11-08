@@ -18,6 +18,7 @@ enum class CommandType {
     PLAY_VOICE_MESSAGE,
     SET_FAMILY,
     SET_PIN,
+    RENAME_DEVICE,
     CUSTOM
 }
 

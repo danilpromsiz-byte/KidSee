@@ -63,6 +63,7 @@
     <!-- Notifications & Boot -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <application
         android:name=".KidSeeApp"
@@ -143,14 +144,18 @@
             android:foregroundServiceType="connectedDevice"
             android:exported="false" />
 
-        <!-- Boot & Package Update Receiver to keep Child mode alive -->
+        <!-- Boot, System Wakeup & Auto-Revival Receiver to keep Child mode 100% alive -->
         <receiver
             android:name=".service.BootReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="android.intent.action.USER_PRESENT" />
+                <action android:name="com.kidsee.app.RESTART_CHILD_SERVICE" />
             </intent-filter>
         </receiver>
 

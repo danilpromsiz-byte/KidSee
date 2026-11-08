@@ -238,4 +238,7 @@
     <string name="disable_battery_opt_desc">Prevents Android from killing KidScreen in background</string>
     <string name="lock_overlay_title">Time for a Break!</string>
     <string name="lock_overlay_desc">"Screen locked by your parent.\nTalk with Mom or Dad to unlock."</string>
+    <string name="rename_device_title">Rename Device</string>
+    <string name="rename_device_hint">Device name (e.g. Living Room TV)</string>
+    <string name="rename_device_toast">Device renamed successfully</string>
 </resources>

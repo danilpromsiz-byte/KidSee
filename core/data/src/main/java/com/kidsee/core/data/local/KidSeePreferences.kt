@@ -49,6 +49,10 @@ class KidSeePreferences(private val context: Context) {
         ) ?: ("dev_" + android.os.Build.MODEL.hashCode().toString())
     }
 
+    val deviceNameFlow: Flow<String?> = context.dataStore.data.map { prefs ->
+        prefs[KEY_DEVICE_NAME]
+    }
+
     val isSetupCompleteFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
         prefs[KEY_IS_SETUP_COMPLETE] ?: false
     }

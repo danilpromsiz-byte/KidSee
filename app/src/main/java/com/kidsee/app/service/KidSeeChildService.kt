@@ -1,5 +1,6 @@
 package com.kidsee.app.service
 
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -45,6 +46,7 @@ class KidSeeChildService : Service() {
                 } else {
                     context.startService(intent)
                 }
+                ChildKeepAliveWorker.schedule(context)
             } catch (e: Exception) {
                 Timber.e(e, "Failed to start KidSeeChildService")
             }
@@ -55,11 +57,13 @@ class KidSeeChildService : Service() {
                 action = ACTION_STOP
             }
             context.stopService(intent)
+            ChildKeepAliveWorker.cancel(context)
         }
     }
 
     private var wakeLock: PowerManager.WakeLock? = null
     private var wifiLock: WifiManager.WifiLock? = null
+    private var isExplicitlyStopped = false
 
     override fun onCreate() {
         super.onCreate()
@@ -70,9 +74,11 @@ class KidSeeChildService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
+            isExplicitlyStopped = true
             stopSelf()
             return START_NOT_STICKY
         }
+        isExplicitlyStopped = false
 
         val notification = buildForegroundNotification()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -103,11 +109,51 @@ class KidSeeChildService : Service() {
         return START_STICKY
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        Timber.d("KidSeeChildService onTaskRemoved, scheduling auto-revival")
+        scheduleRestart()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         isRunning = false
         releaseLocks()
-        Timber.d("KidSeeChildService destroyed")
+        Timber.d("KidSeeChildService destroyed (explicit=$isExplicitlyStopped)")
+        if (!isExplicitlyStopped) {
+            scheduleRestart()
+        }
+    }
+
+    private fun scheduleRestart() {
+        try {
+            val restartIntent = Intent(applicationContext, BootReceiver::class.java).apply {
+                action = BootReceiver.ACTION_RESTART_SERVICE
+            }
+            val pendingIntent = PendingIntent.getBroadcast(
+                applicationContext,
+                1001,
+                restartIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            val alarmManager = getSystemService(Context.ALARM_SERVICE) as? AlarmManager
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager?.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    System.currentTimeMillis() + 1000L,
+                    pendingIntent
+                )
+            } else {
+                alarmManager?.set(
+                    AlarmManager.RTC_WAKEUP,
+                    System.currentTimeMillis() + 1000L,
+                    pendingIntent
+                )
+            }
+            Timber.d("Scheduled automatic resurrection of KidSeeChildService via AlarmManager")
+        } catch (e: Exception) {
+            Timber.e(e, "Error scheduling KidSeeChildService restart")
+        }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

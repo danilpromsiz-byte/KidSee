@@ -238,4 +238,7 @@
     <string name="disable_battery_opt_desc">Предотвращает закрытие KidScreen системой в фоне</string>
     <string name="lock_overlay_title">Время сделать перерыв!</string>
     <string name="lock_overlay_desc">"Экран заблокирован родителем.\nПоговорите с мамой или папой, чтобы разблокировать."</string>
+    <string name="rename_device_title">Переименовать устройство</string>
+    <string name="rename_device_hint">Название (напр. Телевизор в зале)</string>
+    <string name="rename_device_toast">Устройство переименовано</string>
 </resources>

@@ -12,14 +12,24 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 
 /**
- * Automatically launches KidSee child monitoring service on system startup or package update.
+ * Automatically launches KidSee child monitoring service on system startup, package update,
+ * screen unlock, or after memory reclamation/task removal.
  */
 class BootReceiver : BroadcastReceiver() {
+
+    companion object {
+        const val ACTION_RESTART_SERVICE = "com.kidsee.app.RESTART_CHILD_SERVICE"
+    }
+
     override fun onReceive(context: Context, intent: Intent?) {
         val action = intent?.action ?: return
         if (action == Intent.ACTION_BOOT_COMPLETED ||
+            action == Intent.ACTION_LOCKED_BOOT_COMPLETED ||
             action == Intent.ACTION_MY_PACKAGE_REPLACED ||
-            action == "android.intent.action.QUICKBOOT_POWERON"
+            action == "android.intent.action.QUICKBOOT_POWERON" ||
+            action == "com.htc.intent.action.QUICKBOOT_POWERON" ||
+            action == Intent.ACTION_USER_PRESENT ||
+            action == ACTION_RESTART_SERVICE
         ) {
             Timber.d("BootReceiver received action: $action")
             val pendingResult = goAsync()
@@ -30,6 +40,7 @@ class BootReceiver : BroadcastReceiver() {
                     if (role == UserRole.CHILD) {
                         Timber.d("BootReceiver starting KidSeeChildService for child device")
                         KidSeeChildService.start(context)
+                        ChildKeepAliveWorker.schedule(context)
                     }
                 } catch (e: Exception) {
                     Timber.e(e, "Error checking role in BootReceiver")

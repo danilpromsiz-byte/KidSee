@@ -238,4 +238,7 @@
     <string name="disable_battery_opt_desc">Empêche Android de fermer KidScreen en arrière-plan</string>
     <string name="lock_overlay_title">"C'est l'heure d'une pause !"</string>
     <string name="lock_overlay_desc">"Écran verrouillé par vos parents.\nParlez-en à maman ou papa pour déverrouiller."</string>
+    <string name="rename_device_title">"Renommer l'appareil"</string>
+    <string name="rename_device_hint">"Nom de l'appareil"</string>
+    <string name="rename_device_toast">"Appareil renommé"</string>
 </resources>

@@ -238,4 +238,7 @@
     <string name="disable_battery_opt_desc">Evita que Android cierre KidScreen en segundo plano</string>
     <string name="lock_overlay_title">¡Hora de un descanso!</string>
     <string name="lock_overlay_desc">"Pantalla bloqueada por tus padres.\nHabla con mamá o papá para desbloquearla."</string>
+    <string name="rename_device_title">Renombrar dispositivo</string>
+    <string name="rename_device_hint">Nombre del dispositivo</string>
+    <string name="rename_device_toast">Dispositivo renombrado</string>
 </resources>

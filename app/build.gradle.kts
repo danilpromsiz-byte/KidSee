@@ -138,7 +138,11 @@ dependencies {
     debugImplementation(libs.bundles.compose.debug)
 }
 
-tasks.matching { it.name in listOf("assembleDebug", "assembleRelease", "bundleRelease") }.configureEach {
+tasks.matching { it.name == "assembleRelease" }.configureEach {
+    finalizedBy("bundleRelease")
+}
+
+tasks.matching { it.name in listOf("assembleDebug", "assembleRelease", "bundleRelease", "signReleaseBundle") }.configureEach {
     doLast {
         val releaseApk = layout.buildDirectory.file("outputs/apk/release/app-release.apk").get().asFile
         val debugApk = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk").get().asFile
@@ -155,8 +159,10 @@ tasks.matching { it.name in listOf("assembleDebug", "assembleRelease", "bundleRe
 
         if (releaseAab.exists()) {
             val destAab = File(rootDir, "KidSee.aab")
+            val destReleaseAab = File(rootDir, "app-release.aab")
             releaseAab.copyTo(destAab, overwrite = true)
-            logger.lifecycle("Successfully copied finished AAB to: " + destAab.absolutePath)
+            releaseAab.copyTo(destReleaseAab, overwrite = true)
+            logger.lifecycle("Successfully copied finished AAB to root: " + destAab.absolutePath + " and " + destReleaseAab.absolutePath)
         }
     }
 }

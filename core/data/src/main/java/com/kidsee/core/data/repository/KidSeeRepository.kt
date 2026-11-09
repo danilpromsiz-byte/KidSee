@@ -29,6 +29,10 @@ class KidSeeRepository(
     val deviceNameFlow = preferences.deviceNameFlow
     val isSetupCompleteFlow = preferences.isSetupCompleteFlow
     val parentPinFlow = preferences.parentPinFlow
+    val biometricEnabledFlow = preferences.biometricEnabledFlow
+    val lockTypeFlow = preferences.lockTypeFlow
+    val parentPatternFlow = preferences.parentPatternFlow
+    val updateAvailableVersionFlow = preferences.updateAvailableVersionFlow
     val languageFlow = preferences.languageFlow
 
     suspend fun saveRole(role: UserRole) {
@@ -41,6 +45,22 @@ class KidSeeRepository(
 
     suspend fun saveParentPin(pin: String) {
         preferences.setParentPin(pin)
+    }
+
+    suspend fun saveBiometricEnabled(enabled: Boolean) {
+        preferences.setBiometricEnabled(enabled)
+    }
+
+    suspend fun saveLockType(lockType: String) {
+        preferences.setLockType(lockType)
+    }
+
+    suspend fun saveParentPattern(pattern: String) {
+        preferences.setParentPattern(pattern)
+    }
+
+    suspend fun saveUpdateAvailableVersion(version: String) {
+        preferences.setUpdateAvailableVersion(version)
     }
 
     suspend fun saveFamilyId(familyId: String) {

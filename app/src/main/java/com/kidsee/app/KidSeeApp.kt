@@ -3,6 +3,7 @@ package com.kidsee.app
 import android.app.Application
 import com.google.firebase.FirebaseApp
 import com.google.firebase.FirebaseOptions
+import com.kidsee.app.service.AppUpdateWorker
 import com.kidsee.app.state.KidSeeStateManager
 import timber.log.Timber
 
@@ -30,6 +31,7 @@ class KidSeeApp : Application() {
 
         Timber.d("KidSee application initialized")
         stateManager.init()
+        AppUpdateWorker.schedule(this)
     }
 
     private fun initFirebase() {

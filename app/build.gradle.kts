@@ -14,8 +14,8 @@ android {
         applicationId = "com.kidsee.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 30
-        versionName = "1.0.28"
+        versionCode = 31
+        versionName = "1.0.29"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -86,6 +86,7 @@ dependencies {
     implementation(libs.core.ktx)
     implementation(libs.core.splashscreen)
     implementation(libs.appcompat)
+    implementation(libs.biometric)
     implementation(libs.activity.compose)
     implementation(libs.bundles.lifecycle)
     implementation(libs.lifecycle.service)

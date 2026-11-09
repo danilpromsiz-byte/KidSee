@@ -29,6 +29,9 @@ datastore = "1.1.1"
 # Background Work
 workmanager = "2.10.0"
 
+# Biometrics
+biometric = "1.2.0-alpha05"
+
 # Image Loading
 coil = "2.7.0"
 
@@ -64,6 +67,7 @@ timber = "5.0.1"
 core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "core-ktx" }
 core-splashscreen = { group = "androidx.core", name = "core-splashscreen", version.ref = "core-splashscreen" }
 appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+biometric = { group = "androidx.biometric", name = "biometric", version.ref = "biometric" }
 
 # Compose BOM
 compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-bom" }

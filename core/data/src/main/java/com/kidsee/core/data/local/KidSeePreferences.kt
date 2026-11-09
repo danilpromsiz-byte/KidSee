@@ -31,6 +31,10 @@ class KidSeePreferences(private val context: Context) {
         val KEY_LANGUAGE = stringPreferencesKey("app_language")
         val KEY_IS_SETUP_COMPLETE = booleanPreferencesKey("is_setup_complete")
         val KEY_PARENT_PIN = stringPreferencesKey("parent_pin")
+        val KEY_BIOMETRIC_ENABLED = booleanPreferencesKey("biometric_enabled")
+        val KEY_LOCK_TYPE = stringPreferencesKey("lock_type")
+        val KEY_PARENT_PATTERN = stringPreferencesKey("parent_pattern")
+        val KEY_UPDATE_AVAILABLE_VERSION = stringPreferencesKey("update_available_version")
         val KEY_SAVED_DEVICES = stringPreferencesKey("saved_devices_json")
     }
 
@@ -59,6 +63,22 @@ class KidSeePreferences(private val context: Context) {
 
     val parentPinFlow: Flow<String> = context.dataStore.data.map { prefs ->
         prefs[KEY_PARENT_PIN] ?: "1234"
+    }
+
+    val biometricEnabledFlow: Flow<Boolean> = context.dataStore.data.map { prefs ->
+        prefs[KEY_BIOMETRIC_ENABLED] ?: true
+    }
+
+    val lockTypeFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_LOCK_TYPE] ?: "PIN"
+    }
+
+    val parentPatternFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_PARENT_PATTERN] ?: ""
+    }
+
+    val updateAvailableVersionFlow: Flow<String> = context.dataStore.data.map { prefs ->
+        prefs[KEY_UPDATE_AVAILABLE_VERSION] ?: ""
     }
 
     val languageFlow: Flow<String> = context.dataStore.data.map { prefs ->
@@ -95,6 +115,22 @@ class KidSeePreferences(private val context: Context) {
 
     suspend fun setParentPin(pin: String) {
         context.dataStore.edit { it[KEY_PARENT_PIN] = pin }
+    }
+
+    suspend fun setBiometricEnabled(enabled: Boolean) {
+        context.dataStore.edit { it[KEY_BIOMETRIC_ENABLED] = enabled }
+    }
+
+    suspend fun setLockType(lockType: String) {
+        context.dataStore.edit { it[KEY_LOCK_TYPE] = lockType }
+    }
+
+    suspend fun setParentPattern(pattern: String) {
+        context.dataStore.edit { it[KEY_PARENT_PATTERN] = pattern }
+    }
+
+    suspend fun setUpdateAvailableVersion(version: String) {
+        context.dataStore.edit { it[KEY_UPDATE_AVAILABLE_VERSION] = version }
     }
 
     val savedDevicesFlow: Flow<List<ChildDevice>> = context.dataStore.data.map { prefs ->

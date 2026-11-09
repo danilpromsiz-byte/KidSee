@@ -64,6 +64,7 @@ import com.kidsee.app.ui.parent.DeviceDetailScreen
 import com.kidsee.app.ui.parent.ParentDashboardScreen
 import com.kidsee.app.ui.parent.ParentLockScreen
 import com.kidsee.app.util.AppUpdateManager
+import com.kidsee.app.util.BiometricHelper
 import com.kidsee.app.util.UpdateState
 import com.kidsee.core.domain.model.ChildDevice
 import com.kidsee.core.domain.model.CommandType
@@ -202,13 +203,31 @@ class MainActivity : AppCompatActivity() {
         val roleState by repository.userRoleFlow.collectAsState(initial = null)
         val isSetupComplete by repository.isSetupCompleteFlow.collectAsState(initial = false)
         val parentPin by repository.parentPinFlow.collectAsState(initial = "1234")
+        val biometricEnabled by repository.biometricEnabledFlow.collectAsState(initial = true)
+        val lockType by repository.lockTypeFlow.collectAsState(initial = "PIN")
+        val parentPattern by repository.parentPatternFlow.collectAsState(initial = "")
+        val updateAvailableVersion by repository.updateAvailableVersionFlow.collectAsState(initial = "")
         val familyId by repository.familyIdFlow.collectAsState(initial = "KID-7777")
         val currentLanguage by repository.languageFlow.collectAsState(initial = LocaleHelper.getPersistedLanguage(this@MainActivity))
         val childState by app.stateManager.currentDeviceState.collectAsState()
         val updateState by appUpdateManager.updateState.collectAsState()
 
+        val isBiometricSupported = remember {
+            BiometricHelper.canAuthenticate(this@MainActivity)
+        }
+
         val localizedContext = remember(currentLanguage) {
             LocaleHelper.getLocalizedContext(this@MainActivity, currentLanguage)
+        }
+
+        fun launchBiometricPrompt(onSuccess: () -> Unit) {
+            BiometricHelper.showBiometricPrompt(
+                activity = this@MainActivity,
+                title = localizedContext.getString(R.string.biometric_prompt_title),
+                subtitle = localizedContext.getString(R.string.biometric_prompt_subtitle),
+                negativeButtonText = localizedContext.getString(R.string.biometric_prompt_use_pin),
+                onSuccess = onSuccess
+            )
         }
 
         CompositionLocalProvider(
@@ -270,6 +289,22 @@ class MainActivity : AppCompatActivity() {
                     updateState = updateState,
                     familyId = familyId,
                     currentLanguage = currentLanguage,
+                    isBiometricSupported = isBiometricSupported,
+                    isBiometricEnabled = biometricEnabled,
+                    lockType = lockType,
+                    parentPattern = parentPattern,
+                    onToggleBiometric = { enabled ->
+                        scope.launch { repository.saveBiometricEnabled(enabled) }
+                    },
+                    onLockTypeChanged = { newType ->
+                        scope.launch { repository.saveLockType(newType) }
+                    },
+                    onSavePattern = { newPattern ->
+                        scope.launch {
+                            repository.saveParentPattern(newPattern)
+                            repository.saveLockType("PATTERN")
+                        }
+                    },
                     onCheckUpdate = {
                         if (updateState is UpdateState.UpdateAvailable) {
                             showSettingsDialog = false
@@ -439,6 +474,15 @@ class MainActivity : AppCompatActivity() {
                 if (!isParentUnlocked) {
                     ParentLockScreen(
                         correctPin = parentPin,
+                        correctPattern = parentPattern,
+                        lockType = lockType,
+                        isBiometricAvailable = isBiometricSupported,
+                        isBiometricEnabled = biometricEnabled,
+                        onBiometricRequest = {
+                            launchBiometricPrompt {
+                                isParentUnlocked = true
+                            }
+                        },
                         onUnlock = { isParentUnlocked = true }
                     )
                 } else {
@@ -561,15 +605,7 @@ class MainActivity : AppCompatActivity() {
                                 app.stateManager.lanDiscoveryManager.rescan()
                                 Toast.makeText(this@MainActivity, localizedContext.getString(R.string.searching_wifi_network), Toast.LENGTH_SHORT).show()
                             },
-                            onCheckUpdateClick = {
-                                if (updateState is UpdateState.UpdateAvailable) {
-                                    showUpdateDialog = true
-                                } else {
-                                    scope.launch {
-                                        appUpdateManager.checkForUpdates(isManual = true)
-                                    }
-                                }
-                            },
+                            hasUpdateAvailable = updateAvailableVersion.isNotBlank() || updateState is UpdateState.UpdateAvailable,
                             onLockClick = {
                                 isParentUnlocked = false
                             },

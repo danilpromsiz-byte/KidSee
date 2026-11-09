@@ -43,9 +43,27 @@ class AppUpdateManager(
     }
 
     suspend fun checkForUpdates(isManual: Boolean = false) {
-        if (isManual) {
-            withContext(Dispatchers.Main) {
-                openGooglePlay()
+        _updateState.value = UpdateState.Checking
+        withContext(Dispatchers.IO) {
+            try {
+                val releaseInfo = updateClient.checkLatestRelease()
+                val currentVersion = getCurrentVersionName().trim().removePrefix("v").removePrefix("V")
+                if (releaseInfo != null) {
+                    val rawTag = releaseInfo.tagName.trim().removePrefix("v").removePrefix("V")
+                    if (isNewerVersion(rawTag, currentVersion)) {
+                        _updateState.value = UpdateState.UpdateAvailable(releaseInfo)
+                        return@withContext
+                    }
+                }
+                _updateState.value = UpdateState.UpToDate
+            } catch (e: Exception) {
+                Timber.w(e, "Check update failed")
+                if (isManual) {
+                    withContext(Dispatchers.Main) {
+                        openGooglePlay()
+                    }
+                }
+                _updateState.value = UpdateState.Error(e.localizedMessage ?: "Error checking updates")
             }
         }
     }

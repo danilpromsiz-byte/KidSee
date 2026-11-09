@@ -241,4 +241,28 @@
     <string name="rename_device_title">Rename Device</string>
     <string name="rename_device_hint">Device name (e.g. Living Room TV)</string>
     <string name="rename_device_toast">Device renamed successfully</string>
+
+    <!-- Biometric & Pattern Security -->
+    <string name="biometric_prompt_title">Parent Mode Unlock</string>
+    <string name="biometric_prompt_subtitle">Confirm fingerprint or face to proceed</string>
+    <string name="biometric_prompt_use_pin">Use PIN or Pattern</string>
+    <string name="biometric_settings_title">Biometric Unlock</string>
+    <string name="biometric_settings_desc">Quick unlock using fingerprint or face</string>
+    <string name="lock_type_title">Lock Method</string>
+    <string name="lock_type_pin">PIN Code</string>
+    <string name="lock_type_pattern">Pattern Key</string>
+    <string name="switch_to_pattern">Use Pattern Key</string>
+    <string name="switch_to_pin">Use PIN Code</string>
+    <string name="pattern_draw_hint">Draw pattern key to unlock</string>
+    <string name="pattern_wrong_error">Wrong pattern key, try again</string>
+    <string name="pattern_setup_title">Set Pattern Key</string>
+    <string name="pattern_setup_desc">Draw pattern connecting at least 4 dots</string>
+    <string name="pattern_too_short">Connect at least 4 dots</string>
+    <string name="pattern_saved_toast">Pattern key updated successfully</string>
+    <string name="system_diagnostics_title">Diagnostics &amp; Health</string>
+    <string name="system_diagnostics_desc">System services, background watchdog &amp; Wi-Fi</string>
+    <string name="update_notification_title">KidScreen Update Available</string>
+    <string name="update_notification_text">Version %1$s is available. Tap to update.</string>
+    <string name="diag_service_active">Watchdog &amp; Background: Active</string>
+    <string name="diag_network_ok">Wi-Fi LAN Discovery: Active</string>
 </resources>

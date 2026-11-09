@@ -31,6 +31,12 @@
         android:name="android.hardware.bluetooth"
         android:required="false" />
     <uses-feature
+        android:name="android.hardware.fingerprint"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.biometrics"
+        android:required="false" />
+    <uses-feature
         android:name="android.hardware.screen.portrait"
         android:required="false" />
     <uses-feature

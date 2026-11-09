@@ -241,4 +241,28 @@
     <string name="rename_device_title">Переименовать устройство</string>
     <string name="rename_device_hint">Название (напр. Телевизор в зале)</string>
     <string name="rename_device_toast">Устройство переименовано</string>
+
+    <!-- Biometric & Pattern Security -->
+    <string name="biometric_prompt_title">Разблокировка родителя</string>
+    <string name="biometric_prompt_subtitle">Приложите палец или посмотрите в камеру</string>
+    <string name="biometric_prompt_use_pin">Использовать код</string>
+    <string name="biometric_settings_title">Вход по отпечатку / лицу</string>
+    <string name="biometric_settings_desc">Быстрая разблокировка по биометрии</string>
+    <string name="lock_type_title">Способ блокировки</string>
+    <string name="lock_type_pin">PIN-код</string>
+    <string name="lock_type_pattern">Графический ключ</string>
+    <string name="switch_to_pattern">Ввести графический ключ</string>
+    <string name="switch_to_pin">Ввести PIN-код</string>
+    <string name="pattern_draw_hint">Начертите ключ для входа</string>
+    <string name="pattern_wrong_error">Неверный графический ключ, повторите</string>
+    <string name="pattern_setup_title">Задать графический ключ</string>
+    <string name="pattern_setup_desc">Начертите узор, соединив минимум 4 точки</string>
+    <string name="pattern_too_short">Соедините минимум 4 точки</string>
+    <string name="pattern_saved_toast">Графический ключ успешно сохранен</string>
+    <string name="system_diagnostics_title">Диагностика и статус</string>
+    <string name="system_diagnostics_desc">Служба защиты, автозапуск и Wi-Fi сеть</string>
+    <string name="update_notification_title">Доступно обновление KidScreen</string>
+    <string name="update_notification_text">Вышла версия %1$s. Нажмите для обновления.</string>
+    <string name="diag_service_active">Фоновая служба: Активна 24/7</string>
+    <string name="diag_network_ok">Локальная сеть Wi-Fi: Подключена</string>
 </resources>

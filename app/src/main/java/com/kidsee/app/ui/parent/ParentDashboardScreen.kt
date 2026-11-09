@@ -77,10 +77,10 @@ fun ParentDashboardScreen(
     onLockToggle: (ChildDevice) -> Unit,
     onDeleteDevice: (ChildDevice) -> Unit = {},
     onAddDeviceClick: () -> Unit,
-    onCheckUpdateClick: () -> Unit = {},
     onRescanClick: () -> Unit = {},
     onLockClick: () -> Unit = {},
     onSettingsClick: () -> Unit = {},
+    hasUpdateAvailable: Boolean = false,
     currentFamilyId: String = "KID-7777",
     onAdoptDevice: ((ChildDevice) -> Unit)? = null,
     isTv: Boolean = false
@@ -130,14 +130,24 @@ fun ParentDashboardScreen(
                     )
                 }
 
-                // Check for Updates Button
-                IconButton(onClick = onCheckUpdateClick) {
-                    Icon(
-                        imageVector = Icons.Default.SystemUpdate,
-                        contentDescription = stringResource(R.string.check_updates_title),
-                        tint = WazeBlue,
-                        modifier = Modifier.size(24.dp)
-                    )
+                // Settings Button (with update badge if available)
+                IconButton(onClick = onSettingsClick) {
+                    Box {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = stringResource(R.string.settings_title),
+                            tint = WazeTextSecondary,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        if (hasUpdateAvailable) {
+                            Box(
+                                modifier = Modifier
+                                    .size(8.dp)
+                                    .align(Alignment.TopEnd)
+                                    .background(WazeGreen, CircleShape)
+                            )
+                        }
+                    }
                 }
 
                 // Lock Parent Mode Button
@@ -145,16 +155,6 @@ fun ParentDashboardScreen(
                     Icon(
                         imageVector = Icons.Default.Lock,
                         contentDescription = stringResource(R.string.btn_lock),
-                        tint = WazeTextSecondary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                // Settings Button
-                IconButton(onClick = onSettingsClick) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = stringResource(R.string.settings_title),
                         tint = WazeTextSecondary,
                         modifier = Modifier.size(24.dp)
                     )

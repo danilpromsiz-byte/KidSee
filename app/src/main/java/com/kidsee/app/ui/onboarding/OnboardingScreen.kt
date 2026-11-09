@@ -36,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +46,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -56,6 +59,7 @@ import com.kidsee.core.ui.components.KidSeeCard
 import com.kidsee.core.ui.components.KidSeeMascot
 import com.kidsee.core.ui.components.KidSeePillButton
 import com.kidsee.core.ui.theme.KidSeeTypography
+import com.kidsee.core.ui.util.LocaleHelper
 import com.kidsee.core.ui.theme.WazeBlue
 import com.kidsee.core.ui.theme.WazeBlueLight
 import com.kidsee.core.ui.theme.WazeBorder
@@ -86,56 +90,66 @@ fun OnboardingScreen(
     var selectedLang by remember(currentLanguage) { mutableStateOf(currentLanguage) }
     var selectedRole by remember { mutableStateOf<UserRole?>(null) }
 
-    AnimatedContent(
-        targetState = step,
-        transitionSpec = { fadeIn() togetherWith fadeOut() },
-        label = "onboarding_steps"
-    ) { currentStep ->
-        when (currentStep) {
-            OnboardingStep.LANGUAGE -> {
-                LanguageSelectionStep(
-                    selectedLang = selectedLang,
-                    onLangSelect = { langCode ->
-                        selectedLang = langCode
-                        onLanguageChanged(langCode)
-                    },
-                    onContinue = {
-                        step = OnboardingStep.ROLE
-                    }
-                )
-            }
-            OnboardingStep.ROLE -> {
-                RoleSelectionStep(
-                    selectedRole = selectedRole,
-                    onRoleSelect = { selectedRole = it },
-                    onBack = { step = OnboardingStep.LANGUAGE },
-                    onContinue = {
-                        if (selectedRole == UserRole.CHILD) {
-                            onRoleSelected(UserRole.CHILD)
-                        } else if (selectedRole == UserRole.PARENT) {
-                            step = OnboardingStep.PARENT_AGE
+    val hostContext = LocalContext.current
+    val onboardingLocalizedContext = remember(selectedLang) {
+        LocaleHelper.getLocalizedContext(hostContext, selectedLang)
+    }
+
+    CompositionLocalProvider(
+        LocalContext provides onboardingLocalizedContext,
+        LocalConfiguration provides onboardingLocalizedContext.resources.configuration
+    ) {
+        AnimatedContent(
+            targetState = step,
+            transitionSpec = { fadeIn() togetherWith fadeOut() },
+            label = "onboarding_steps"
+        ) { currentStep ->
+            when (currentStep) {
+                OnboardingStep.LANGUAGE -> {
+                    LanguageSelectionStep(
+                        selectedLang = selectedLang,
+                        onLangSelect = { langCode ->
+                            selectedLang = langCode
+                            onLanguageChanged(langCode)
+                        },
+                        onContinue = {
+                            step = OnboardingStep.ROLE
                         }
-                    }
-                )
-            }
-            OnboardingStep.PARENT_AGE -> {
-                ParentAgeVerificationStep(
-                    onBack = { step = OnboardingStep.ROLE },
-                    onVerifiedAdult = {
-                        step = OnboardingStep.PARENT_PIN
-                    },
-                    onRedirectToChild = {
-                        onRoleSelected(UserRole.CHILD)
-                    }
-                )
-            }
-            OnboardingStep.PARENT_PIN -> {
-                ParentCreatePinStep(
-                    onBack = { step = OnboardingStep.PARENT_AGE },
-                    onPinCreated = { pin ->
-                        onParentRegistered(pin)
-                    }
-                )
+                    )
+                }
+                OnboardingStep.ROLE -> {
+                    RoleSelectionStep(
+                        selectedRole = selectedRole,
+                        onRoleSelect = { selectedRole = it },
+                        onBack = { step = OnboardingStep.LANGUAGE },
+                        onContinue = {
+                            if (selectedRole == UserRole.CHILD) {
+                                onRoleSelected(UserRole.CHILD)
+                            } else if (selectedRole == UserRole.PARENT) {
+                                step = OnboardingStep.PARENT_AGE
+                            }
+                        }
+                    )
+                }
+                OnboardingStep.PARENT_AGE -> {
+                    ParentAgeVerificationStep(
+                        onBack = { step = OnboardingStep.ROLE },
+                        onVerifiedAdult = {
+                            step = OnboardingStep.PARENT_PIN
+                        },
+                        onRedirectToChild = {
+                            onRoleSelected(UserRole.CHILD)
+                        }
+                    )
+                }
+                OnboardingStep.PARENT_PIN -> {
+                    ParentCreatePinStep(
+                        onBack = { step = OnboardingStep.PARENT_AGE },
+                        onPinCreated = { pin ->
+                            onParentRegistered(pin)
+                        }
+                    )
+                }
             }
         }
     }

@@ -208,7 +208,16 @@ class MainActivity : AppCompatActivity() {
         val parentPattern by repository.parentPatternFlow.collectAsState(initial = "")
         val updateAvailableVersion by repository.updateAvailableVersionFlow.collectAsState(initial = "")
         val familyId by repository.familyIdFlow.collectAsState(initial = "KID-7777")
-        val currentLanguage by repository.languageFlow.collectAsState(initial = LocaleHelper.getPersistedLanguage(this@MainActivity))
+        val persistedLanguage = remember { LocaleHelper.getPersistedLanguage(this@MainActivity) }
+        var activeLanguage by rememberSaveable { mutableStateOf(persistedLanguage) }
+        val currentLanguageFlow by repository.languageFlow.collectAsState(initial = persistedLanguage)
+
+        LaunchedEffect(currentLanguageFlow) {
+            if (activeLanguage != currentLanguageFlow) {
+                activeLanguage = currentLanguageFlow
+            }
+        }
+
         val childState by app.stateManager.currentDeviceState.collectAsState()
         val updateState by appUpdateManager.updateState.collectAsState()
 
@@ -216,8 +225,8 @@ class MainActivity : AppCompatActivity() {
             BiometricHelper.canAuthenticate(this@MainActivity)
         }
 
-        val localizedContext = remember(currentLanguage) {
-            LocaleHelper.getLocalizedContext(this@MainActivity, currentLanguage)
+        val localizedContext = remember(activeLanguage) {
+            LocaleHelper.getLocalizedContext(this@MainActivity, activeLanguage)
         }
 
         fun launchBiometricPrompt(onSuccess: () -> Unit) {
@@ -245,9 +254,11 @@ class MainActivity : AppCompatActivity() {
             var pinSuccessCallback by remember { mutableStateOf<((String) -> Unit)?>(null) }
 
             fun changeLanguage(langCode: String, recreateActivity: Boolean = false) {
+                activeLanguage = langCode
+                LocaleHelper.persistLanguage(this@MainActivity, langCode)
+                LocaleHelper.applyLanguage(this@MainActivity, langCode, recreateActivity = recreateActivity)
                 scope.launch {
                     repository.saveLanguage(langCode)
-                    LocaleHelper.applyLanguage(this@MainActivity, langCode, recreateActivity = recreateActivity)
                 }
             }
 
@@ -288,7 +299,7 @@ class MainActivity : AppCompatActivity() {
                     currentVersion = appUpdateManager.getCurrentVersionName(),
                     updateState = updateState,
                     familyId = familyId,
-                    currentLanguage = currentLanguage,
+                    currentLanguage = activeLanguage,
                     isBiometricSupported = isBiometricSupported,
                     isBiometricEnabled = biometricEnabled,
                     lockType = lockType,
@@ -424,7 +435,7 @@ class MainActivity : AppCompatActivity() {
                 )
             } else if (roleState == null) {
                 OnboardingScreen(
-                    currentLanguage = currentLanguage,
+                    currentLanguage = activeLanguage,
                     onLanguageChanged = { langCode ->
                         changeLanguage(langCode, recreateActivity = false)
                     },
